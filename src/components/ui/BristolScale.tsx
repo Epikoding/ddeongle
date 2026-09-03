@@ -23,12 +23,12 @@ export function BristolScale({ value, onChange }: { value: number | null; onChan
         const on = value === n
         const warn = n >= 6
         return (
-          <button key={n} type="button" aria-pressed={on} aria-label={`${n} ${label}`} onClick={() => onChange(on ? null : n)}
-            className={cn('flex aspect-[1/1.35] flex-col items-center justify-center gap-0.5 rounded-[10px] border text-[10px]',
+          <button key={n} type="button" role="radio" aria-checked={on} aria-label={`${n} ${label}`} onClick={() => onChange(on ? null : n)}
+            className={cn('flex aspect-[1/1.35] flex-col items-center justify-center gap-0.5 rounded-[10px] border text-[12px]',
               on ? (warn ? 'border-warn bg-warn-soft text-warn' : 'border-accent bg-accent-soft text-accent') : 'border-line bg-card text-mute')}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill={on && warn ? 'var(--warn)' : on ? 'var(--accent)' : 'var(--mute)'}
               dangerouslySetInnerHTML={{ __html: SHAPES[n] }} />
-            <b className={cn('text-[13px]', on ? '' : 'text-ink')}>{n}</b>
+            <b className={cn('text-[12px]', on ? '' : 'text-ink')}>{n}</b>
             <span>{label}</span>
           </button>
         )

@@ -14,11 +14,11 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (t: st
         {tags.map((t) => <Chip key={t} tone={isWatched(t) ? 'warn' : 'default'} selected={isWatched(t)} onRemove={() => onChange(tags.filter((x) => x !== t))}>{t}</Chip>)}
         <input value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); add(draft) } }}
-          placeholder="+ 재료" className="h-8 w-24 rounded-full border border-dashed border-line bg-transparent px-3 text-[13px]" data-testid="tag-input" />
+          placeholder="+ 재료" className="h-8 w-24 rounded-full border border-dashed border-line bg-transparent px-3 text-[14px]" data-testid="tag-input" />
       </div>
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {suggestions.map((s) => <button key={s} type="button" onClick={() => add(s)} className="rounded-full bg-warn-soft/50 px-2 py-0.5 text-[11px] text-warn">+ {s}</button>)}
+          {suggestions.map((s) => <button key={s} type="button" onClick={() => add(s)} className="rounded-full bg-warn-soft/50 px-2 py-0.5 text-[12px] text-warn">+ {s}</button>)}
         </div>
       )}
     </div>

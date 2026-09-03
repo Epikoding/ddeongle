@@ -1,20 +1,11 @@
-import { toLocalDateStr } from './time'
+import { toLocalDateStr, localToIso } from './time'
+
+/** 시각 변환의 정본은 lib/time.ts다. 이름만 여기서 함께 내보낸다. */
+export { localToIso } from './time'
 
 export type QuickPreset = 'now' | 'morning' | 'lunch' | 'evening'
 export const QUICK_LABEL: Record<QuickPreset, string> = { now: '지금', morning: '아침', lunch: '점심', evening: '저녁' }
 const FIXED: Record<Exclude<QuickPreset, 'now'>, string> = { morning: '08:00', lunch: '12:30', evening: '19:00' }
-
-function offsetAt(d: Date, tz: string): string {
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(d).find((x) => x.type === 'timeZoneName')!.value
-  return name === 'GMT' ? '+00:00' : name.replace('GMT', '')
-}
-
-/** 지역 날짜+시각 문자열("2026-09-03T12:30") → UTC ISO. 서머타임 전환일은 실제 오프셋으로 한 번 더 잡는다. */
-export function localToIso(local: string, tz: string, sample: Date): string {
-  const guess = new Date(`${local}:00${offsetAt(sample, tz)}`)
-  const actual = offsetAt(guess, tz)
-  return (actual === offsetAt(sample, tz) ? guess : new Date(`${local}:00${actual}`)).toISOString()
-}
 
 /** UTC ISO → 지역 날짜+시각 문자열("2026-09-03T12:30"). localToIso의 역방향. */
 export function isoToLocalInput(iso: string, tz: string): string {

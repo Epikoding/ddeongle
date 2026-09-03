@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
 export function Chip({ selected = false, tone = 'default', onClick, onRemove, children, className, ...rest }:
-  { selected?: boolean; tone?: 'default' | 'warn' | 'accent'; onClick?: () => void; onRemove?: () => void; children: ReactNode; className?: string; 'data-testid'?: string }) {
-  const base = 'inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[13px] leading-none transition-colors select-none'
+  { selected?: boolean; tone?: 'default' | 'warn'; onClick?: () => void; onRemove?: () => void; children: ReactNode; className?: string; 'data-testid'?: string }) {
+  const base = 'inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[14px] leading-none transition-colors select-none'
   const look = selected
     ? tone === 'warn' ? 'border-warn bg-warn-soft text-warn font-semibold' : 'border-accent bg-accent text-primary-foreground font-semibold'
     : tone === 'warn' ? 'border-warn/60 bg-warn-soft/60 text-warn' : 'border-line bg-card text-ink'

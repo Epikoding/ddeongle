@@ -27,16 +27,22 @@ export function toLocalDateStr(d: Date, tz: string): string {
   return `${p.y}-${p.m}-${p.d}`
 }
 
-function offsetFor(dateStr: string, tz: string): string {
-  return parts(new Date(`${dateStr}T12:00:00Z`), tz).offset
+/** 그 시각 그 시간대의 UTC 오프셋("+09:00"). */
+export function offsetAt(d: Date, tz: string): string {
+  return parts(d, tz).offset
 }
 
-/** 그 날 현지 자정의 정확한 instant. 서머타임 전환일이면 오프셋을 한 번 다시 잡는다. */
+/** 지역 날짜+시각 문자열("2026-09-03T12:30") → UTC ISO. 기준 시각(sample)의 오프셋으로 한 번 찍고,
+ *  그 결과 날짜의 실제 오프셋으로 한 번 다시 잡는다(서머타임 전환을 건너뛰면 기준 오프셋이 더는 맞지 않는다). */
+export function localToIso(local: string, tz: string, sample: Date): string {
+  const guess = new Date(`${local}:00${offsetAt(sample, tz)}`)
+  const actual = offsetAt(guess, tz)
+  return (actual === offsetAt(sample, tz) ? guess : new Date(`${local}:00${actual}`)).toISOString()
+}
+
+/** 그 날 현지 자정의 정확한 instant. 기준은 그 날 UTC 정오. */
 function localMidnight(dateStr: string, tz: string): Date {
-  const guess = new Date(`${dateStr}T00:00:00${offsetFor(dateStr, tz)}`)
-  const actual = parts(guess, tz).offset
-  if (actual === offsetFor(dateStr, tz)) return guess
-  return new Date(`${dateStr}T00:00:00${actual}`)
+  return new Date(localToIso(`${dateStr}T00:00`, tz, new Date(`${dateStr}T12:00:00Z`)))
 }
 
 function nextDateStr(dateStr: string): string {
