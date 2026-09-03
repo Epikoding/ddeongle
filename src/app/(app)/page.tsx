@@ -1,24 +1,32 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ChevronLeft, ChevronRight, Mic } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, listEntriesForDay, listFoods, type EntryRow, type RawInput } from '@/lib/db'
+import { getProfile, listEntriesForDay, type EntryRow } from '@/lib/db'
 import { toLocalDateStr } from '@/lib/time'
 import { EntryCard } from '@/components/EntryCard'
 import { InputBar } from '@/components/InputBar'
-import { ConfirmSheet } from '@/components/ConfirmSheet'
+import { DayPicker } from '@/components/DayPicker'
 import { PendingBanner } from '@/components/PendingBanner'
-import type { PasteResult } from '@/lib/parse-paste'
-import type { FoodHint } from '@/lib/prompt'
+import { EmptyState } from '@/components/ui/EmptyState'
+
+function dayTitle(date: string, tz: string): { title: string; rel: string | null } {
+  const d = new Date(`${date}T12:00:00Z`)
+  const title = new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', month: 'long', day: 'numeric', weekday: 'short' }).format(d)
+  const today = toLocalDateStr(new Date(), tz)
+  const y = new Date(`${today}T12:00:00Z`); y.setUTCDate(y.getUTCDate() - 1)
+  const rel = date === today ? '오늘' : date === y.toISOString().slice(0, 10) ? '어제' : null
+  return { title, rel }
+}
 
 export default function HomePage() {
+  const router = useRouter()
   const [tz, setTz] = useState('Asia/Seoul')
   const [date, setDate] = useState<string>('')
   const [entries, setEntries] = useState<EntryRow[]>([])
-  const [foods, setFoods] = useState<FoodHint[]>([])
-  const [sheet, setSheet] = useState<{ result: Extract<PasteResult, { ok: true }>; raw: RawInput } | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
-  const [inputKey, setInputKey] = useState(0) // 저장에 성공하면 올려서 InputBar를 새로 띄운다(입력·기준 시각 초기화)
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const loading = !date || loadedKey !== `${date}|${tz}|${reloadKey}`
@@ -28,7 +36,6 @@ export default function HomePage() {
     getProfile(sb)
       .then((p) => { setTz(p.timezone); setDate(toLocalDateStr(new Date(), p.timezone)) })
       .catch(() => { setTz('Asia/Seoul'); setDate(toLocalDateStr(new Date(), 'Asia/Seoul')) })
-    listFoods(sb).then(setFoods).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -43,37 +50,39 @@ export default function HomePage() {
   }, [date, tz, reloadKey])
 
   function shift(days: number) {
-    if (!date) return // 날짜를 아직 못 정했으면(프로필 로딩 전) 움직이지 않는다
+    if (!date) return
     const d = new Date(`${date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days)
     setDate(d.toISOString().slice(0, 10))
   }
 
+  const { title, rel } = date ? dayTitle(date, tz) : { title: '', rel: null }
+  const subtitle = [rel, loading ? null : `기록 ${entries.length}건`].filter(Boolean).join(' · ')
+
   return (
-    <main className="mx-auto max-w-md p-4 pb-40">
-      <header className="mb-3 flex items-center justify-between">
-        <button onClick={() => shift(-1)} disabled={!date} className="p-2 disabled:opacity-40">◀</button>
-        <input type="date" value={date} onChange={(e) => { if (e.target.value) setDate(e.target.value) }} className="rounded border p-1" />
-        <button onClick={() => shift(1)} disabled={!date} className="p-2 disabled:opacity-40">▶</button>
+    <main className="pb-[152px]">
+      <header className="flex items-start justify-between px-4 pt-4 pb-2">
+        <div>
+          <h1 className="text-[24px] font-bold tracking-[-0.01em]">{title || ' '}</h1>
+          <p className="mt-0.5 text-[13px] text-mute">{subtitle || ' '}</p>
+        </div>
+        <div className="flex items-center">
+          <button type="button" onClick={() => shift(-1)} disabled={!date} aria-label="하루 전" className="rounded-full p-2 text-mute hover:bg-accent-soft disabled:opacity-40"><ChevronLeft size={22} /></button>
+          <button type="button" onClick={() => shift(1)} disabled={!date} aria-label="하루 뒤" className="rounded-full p-2 text-mute hover:bg-accent-soft disabled:opacity-40"><ChevronRight size={22} /></button>
+          {date && <DayPicker date={date} tz={tz} onPick={setDate} />}
+        </div>
       </header>
-      <nav className="mb-3 flex gap-3 text-sm text-neutral-600">
-        <Link href="/analysis">분석</Link><Link href="/export">내보내기</Link><Link href="/settings">설정</Link>
-      </nav>
+
       <PendingBanner onFlushed={() => setReloadKey((k) => k + 1)} />
-      {loading ? <p className="text-neutral-500">불러오는 중…</p> :
-        loadError ? <p role="alert" className="text-red-600">{loadError}</p> :
-        entries.length === 0 ? <p className="text-neutral-500">이 날 기록이 없습니다.</p> :
-        <div className="space-y-2">
-          {entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`}><EntryCard entry={e} tz={tz} /></Link>)}
-        </div>}
-      <InputBar key={inputKey} tz={tz} foods={foods} onParsed={(result, raw) => setSheet({ result, raw })} />
-      {sheet && <ConfirmSheet result={sheet.result} raw={sheet.raw} tz={tz}
-        onSaved={(remaining) => {
-          setReloadKey((k) => k + 1)
-          listFoods(createClient()).then(setFoods).catch(() => {})
-          // 남은 항목(시각 미정·모양 오류)이 있으면 시트를 열어 둔다 — 고치기 전까지 사라지면 안 된다
-          if (remaining === 0) { setSheet(null); setInputKey((k) => k + 1) }
-        }}
-        onClose={() => setSheet(null)} />}
+
+      <section className="space-y-2 px-4">
+        {loading ? <p className="py-8 text-center text-[13px] text-mute">불러오는 중…</p> :
+          loadError ? <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[13px] text-warn">{loadError}</p> :
+          entries.length === 0 ? <EmptyState icon={Mic} title="아직 기록이 없어요" hint="아래에서 말로 적어 보세요" /> :
+          entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`} className="block"><EntryCard entry={e} tz={tz} /></Link>)}
+      </section>
+
+      <InputBar onOpenInput={() => {}} onOpenForm={() => router.push('/entries/new')} />
+      {/* Task 6에서 <InputSheet>와 <ConfirmSheet>를 여기에 붙인다. inputOpen·sheet·foods·inputKey·setSheet는 그때 쓴다. */}
     </main>
   )
 }

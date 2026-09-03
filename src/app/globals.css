@@ -99,3 +99,9 @@
   html { color-scheme: light dark; }
   body { @apply bg-bg text-ink font-sans antialiased; font-size: 14px; }
 }
+
+/* ── 달력 점(DayPicker) ── */
+.gl-dot-entry, .gl-dot-target { position: relative; }
+.gl-dot-entry::after, .gl-dot-target::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 5px; height: 5px; border-radius: 9999px; transform: translateX(-50%); }
+.gl-dot-entry::after { background: var(--accent); }
+.gl-dot-target::after { background: var(--warn); }

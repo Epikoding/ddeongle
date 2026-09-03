@@ -1,6 +1,7 @@
 import { KIND_LABEL, type Entry } from '@/lib/schemas'
-import { KindIcon } from '@/components/ui/KindIcon'
 import { isWatched } from '@/lib/watch-ingredients'
+import { KindIcon } from '@/components/ui/KindIcon'
+import { cn } from '@/lib/utils'
 
 export function summarizeEntry(e: Entry): string {
   switch (e.kind) {
@@ -27,25 +28,37 @@ export function timeLabel(iso: string, tz: string, precision: Entry['time_precis
   return precision === 'exact' ? t : precision === 'approx' ? `${t} · 대략` : '시각 없음'
 }
 
+function subLabel(e: Entry): string {
+  const base = KIND_LABEL[e.kind]
+  if (e.kind === 'meal' && e.data.meal_type) return `${base} · ${e.data.meal_type}`
+  return base
+}
+
 export function EntryCard({ entry, tz, onClick, tone = 'normal' }:
   { entry: Entry; tz: string; onClick?: () => void; tone?: 'normal' | 'warn' | 'error' }) {
-  const border = tone === 'error' ? 'border-red-500 ring-2 ring-red-200' : tone === 'warn' ? 'border-amber-500 ring-2 ring-amber-200' : 'border-neutral-200'
+  const ring = tone === 'error' ? 'border-warn ring-2 ring-warn/25' : tone === 'warn' ? 'border-warn/70 ring-2 ring-warn/15' : 'border-line'
+  const time = new Intl.DateTimeFormat('ko-KR', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(entry.occurred_at))
+  const tags = entry.kind === 'meal' ? [...new Set(entry.data.foods.flatMap((f) => f.ingredients))] : []
   return (
-    <div onClick={onClick} className={`rounded-xl border bg-white p-3 ${border} ${onClick ? 'cursor-pointer active:bg-neutral-100' : ''}`}>
-      <div className="flex justify-between text-xs text-neutral-500">
-        <span><KindIcon kind={entry.kind} size={24} /> {KIND_LABEL[entry.kind]}{entry.kind === 'meal' && entry.data.meal_type ? ` · ${entry.data.meal_type}` : ''}</span>
-        <span className={entry.time_precision !== 'exact' ? 'rounded bg-amber-100 px-1 text-amber-800' : ''}>
-          {timeLabel(entry.occurred_at, tz, entry.time_precision)}
-        </span>
-      </div>
-      <div className="mt-1 font-semibold">{summarizeEntry(entry)}</div>
-      {entry.kind === 'meal' && entry.data.foods.some((f) => f.ingredients.length) && (
-        <div className="mt-1 flex flex-wrap gap-1">
-          {[...new Set(entry.data.foods.flatMap((f) => f.ingredients))].map((t) => (
-            <span key={t} className={`rounded-full border px-2 text-xs ${isWatched(t) ? 'border-amber-500 text-amber-800' : 'border-neutral-300'}`}>{t}</span>
-          ))}
+    <div onClick={onClick} className={cn('flex gap-3 rounded-2xl border bg-card p-3', ring, onClick && 'cursor-pointer active:bg-accent-soft/40')}>
+      <KindIcon kind={entry.kind} size={32} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="truncate text-[16px] font-semibold leading-tight">{summarizeEntry(entry)}</p>
+          <span className="flex shrink-0 items-center gap-1 text-[12px] text-mute tabular-nums">
+            {entry.time_precision === 'unknown' ? <span className="rounded-full bg-warn-soft px-1.5 text-warn">시각 없음</span> : time}
+            {entry.time_precision === 'approx' && <span className="rounded-full bg-warn-soft px-1.5 text-[11px] text-warn">대략</span>}
+          </span>
         </div>
-      )}
+        <p className="mt-0.5 text-[12px] text-mute">{subLabel(entry)}</p>
+        {tags.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {tags.map((t) => (
+              <span key={t} className={cn('rounded-full px-2 py-0.5 text-[11px]', isWatched(t) ? 'bg-warn-soft text-warn' : 'bg-line text-ink')}>{t}</span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
