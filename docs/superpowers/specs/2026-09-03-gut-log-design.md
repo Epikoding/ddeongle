@@ -16,7 +16,8 @@
 | 분석 | 앱 안에서 자동 계산(용의자 순위표). 재도입 안내는 하지 않는다 |
 | 스택 | Next.js(App Router) + TypeScript + Tailwind, Supabase(Auth·Postgres·RLS), Vercel 무료티어. 서버 라우트 핸들러 없음 |
 | PWA | 매니페스트 + 얇은 서비스워커(앱 셸 캐시). 오프라인은 저장 실패분 재시도 큐까지만 |
-| 위치 | `/Users/dj/dev/gut-log` (git, 원격 미정) |
+| 위치 | `/Users/dj/dev/gut-log` (git). 원격은 개인 GitHub **Epikoding/gut-log**, `dj-wishket`을 collaborator로 |
+| 계정 | 전부 개인 계정. Supabase·Vercel은 djlesque@gmail.com, GitHub는 Epikoding. 회사 계정 미사용 (2026-09-03) |
 
 ## 2. 전체 구조
 
