@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getProfile, getEntry, getRawInput, updateEntry, deleteEntry, type EntryRow } from '@/lib/db'
-import { entrySchema } from '@/lib/schemas'
+import { entrySchema, KIND_LABEL } from '@/lib/schemas'
 import { EntryEditor } from '@/components/EntryForm'
+import { KindIcon } from '@/components/ui/KindIcon'
+import { Button } from '@/components/ui/button'
 
 function reason(e: unknown): string {
   const m = (e as Error).message
@@ -49,23 +52,28 @@ export default function EntryPage() {
     catch (e) { setErr(reason(e)) }
   }
 
-  if (status === 'loading') return <main className="p-4 text-neutral-500">불러오는 중…</main>
+  if (status === 'loading') return <main className="px-4 pt-4 text-mute">불러오는 중…</main>
   if (status !== 'ready' || !entry) return (
-    <main className="mx-auto max-w-md p-4">
-      <p role="alert" className="text-sm text-red-700">
+    <main className="px-4 pt-4">
+      <p role="alert" className="text-[14px] text-warn">
         {status === 'missing' ? '기록을 찾지 못했습니다.' : `불러오지 못했습니다.${err ? ` (${err})` : ''}`}
       </p>
-      <Link href="/" className="mt-3 inline-block underline">← 타임라인</Link>
+      <Link href="/" className="mt-3 inline-block text-[14px] text-accent underline">← 타임라인</Link>
     </main>
   )
   return (
-    <main className="mx-auto max-w-md p-4">
-      <h1 className="mb-3 text-lg font-bold">기록 수정</h1>
-      <EntryEditor value={entry} tz={tz} onChange={(v) => setEntry({ ...entry, ...v } as EntryRow)} />
-      {raw && <details className="mt-2 text-sm"><summary>원문 보기</summary><pre className="whitespace-pre-wrap rounded bg-neutral-100 p-2 text-xs">{raw}</pre></details>}
-      {err && <p role="alert" className="mt-2 text-sm text-red-700">{err}</p>}
-      <button onClick={save} className="mt-3 w-full rounded-xl bg-black p-3 font-semibold text-white">저장</button>
-      <button onClick={remove} className="mt-2 w-full rounded-xl border border-red-600 p-2 text-sm text-red-700">삭제</button>
+    <main className="pb-6">
+      <header className="flex items-center gap-1 px-2 pt-3 pb-2">
+        <button type="button" onClick={() => router.back()} aria-label="뒤로" className="rounded-full p-2 text-mute"><ChevronLeft size={22} /></button>
+        <span className="flex items-center gap-2 text-[20px] font-bold"><KindIcon kind={entry.kind} size={24} />{KIND_LABEL[entry.kind]} 수정</span>
+      </header>
+      <div className="px-4">
+        <EntryEditor value={entry} tz={tz} onChange={(v) => setEntry({ ...entry, ...v } as EntryRow)} />
+        {raw && <details className="mt-3 text-[12px] text-mute"><summary>원문 보기</summary><pre className="mt-1 whitespace-pre-wrap rounded-xl bg-card p-2 text-[12px]">{raw}</pre></details>}
+        {err && <p role="alert" className="mt-2 rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{err}</p>}
+        <Button onClick={save} className="mt-4 h-12 w-full rounded-xl text-[16px] font-bold">저장</Button>
+        <button type="button" onClick={remove} className="mt-2 w-full rounded-xl border border-warn/60 py-2.5 text-[14px] text-warn">삭제</button>
+      </div>
     </main>
   )
 }

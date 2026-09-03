@@ -1,24 +1,22 @@
 'use client'
-import { KINDS, KIND_LABEL, type Entry, type Kind, normalizeTag } from '@/lib/schemas'
+import type { ReactNode } from 'react'
+import { KINDS, KIND_LABEL, type Entry, type Kind } from '@/lib/schemas'
 import { KindIcon } from '@/components/ui/KindIcon'
-import { isWatched } from '@/lib/watch-ingredients'
-import { useState } from 'react'
+import { Chip } from '@/components/ui/Chip'
+import { Segment10 } from '@/components/ui/Segment10'
+import { BristolScale } from '@/components/ui/BristolScale'
+import { QuickTime } from '@/components/ui/QuickTime'
+import { TagEditor } from '@/components/ui/TagEditor'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { isoToLocalInput, localToIso } from '@/lib/quick-time'
 
+/** 시각 변환의 정본은 lib/time.ts다(quick-time이 다시 내보낸다). 여기서는 이름만 지키고 그대로 넘긴다. */
 export function toLocalInput(iso: string, tz: string): string {
-  const p = new Intl.DateTimeFormat('sv-SE', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
-  return p.replace(' ', 'T')
+  return isoToLocalInput(iso, tz)
 }
-function offsetAt(d: Date, tz: string): string {
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(d).find((x) => x.type === 'timeZoneName')!.value
-  return name === 'GMT' ? '+00:00' : name.replace('GMT', '')
-}
-/** 지역 시각 칸(v) → UTC ISO. 기준 시각의 오프셋으로 한 번 찍고, 그 결과 날짜의 실제 오프셋으로 한 번 다시 잡는다
- *  (서머타임 전환을 건너뛰면 기준 시각의 오프셋이 더 이상 맞지 않는다 — lib/time.ts의 localMidnight과 같은 방식) */
 export function fromLocalInput(v: string, tz: string, sampleIso: string): string {
-  const sample = offsetAt(new Date(sampleIso), tz)
-  const guess = new Date(`${v}:00${sample}`)
-  const actual = offsetAt(guess, tz)
-  return (actual === sample ? guess : new Date(`${v}:00${actual}`)).toISOString()
+  return localToIso(v, tz, new Date(sampleIso))
 }
 
 export function blankEntry(kind: Kind, nowIso: string): Entry {
@@ -36,116 +34,113 @@ export function blankEntry(kind: Kind, nowIso: string): Entry {
   }
 }
 
+const MEAL_TYPES = ['아침', '점심', '저녁', '간식'] as const
 const AMOUNTS = ['적게', '보통', '많이'] as const
 const EATING_PATTERNS = ['급하게', '거른 끼니 후', '과식', '찬 음료', '기름진'] as const
+const SYMPTOMS = ['복통', '팽만', '가스', '오심', '속쓰림', '두통', '피로', '기타'] as const
+const EXERCISES = ['걷기', '달리기', '자전거', '수영', '근력', '요가', '기타'] as const
+const INTENSITY = ['낮음', '중간', '높음'] as const
+const CYCLE = ['시작', '진행중', '종료', '배란 추정'] as const
 
 export function KindPicker({ onPick }: { onPick: (k: Kind) => void }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-3 gap-2 px-4">
       {KINDS.map((k) => (
-        <button key={k} onClick={() => onPick(k)} className="rounded-xl border bg-white p-3 text-sm" data-testid={`kind-${k}`}>
-          <div><KindIcon kind={k} size={24} /></div>{KIND_LABEL[k]}
+        <button key={k} type="button" onClick={() => onPick(k)} data-testid={`kind-${k}`}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-card py-4 text-[14px] font-semibold active:bg-accent-soft/40">
+          <KindIcon kind={k} size={40} />{KIND_LABEL[k]}
         </button>
       ))}
     </div>
   )
 }
 
-const Num = ({ label, value, min, max, onChange }: { label: string; value: number | null; min: number; max: number; onChange: (v: number | null) => void }) => (
-  <label className="block">{label}
-    <input type="number" min={min} max={max} value={value ?? ''} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} className="ml-2 w-20 rounded border p-1" />
-  </label>
-)
-const Sel = <T extends string>({ label, value, options, onChange, allowNull }: { label: string; value: T | null; options: readonly T[]; onChange: (v: T | null) => void; allowNull?: boolean }) => (
-  <label className="block">{label}
-    <select value={value ?? ''} onChange={(e) => onChange((e.target.value || null) as T | null)} className="ml-2 rounded border p-1">
-      {allowNull && <option value="">-</option>}
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
-    </select>
-  </label>
-)
-
-function TagEditor({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
-  const [draft, setDraft] = useState('')
-  function add() { const t = normalizeTag(draft); if (t && !tags.includes(t)) onChange([...tags, t]); setDraft('') }
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {tags.map((t) => (
-        <button key={t} onClick={() => onChange(tags.filter((x) => x !== t))} className={`rounded-full border px-2 text-xs ${isWatched(t) ? 'border-amber-500 text-amber-800' : ''}`}>{t} ×</button>
-      ))}
-      <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); add() } }}
-        placeholder="+ 재료" className="w-20 rounded border px-1 text-xs" data-testid="tag-input" />
-    </div>
-  )
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <div><p className="mb-1.5 text-[12px] font-semibold tracking-wide text-mute">{label}</p>{children}</div>
+}
+function ChipRow<T extends string>({ options, value, onChange, tone }: { options: readonly T[]; value: T | null; onChange: (v: T | null) => void; tone?: 'default' | 'warn' }) {
+  return <div className="flex flex-wrap gap-1.5">{options.map((o) => <Chip key={o} tone={tone} selected={value === o} onClick={() => onChange(value === o ? null : o)}>{o}</Chip>)}</div>
+}
+function ChipMulti<T extends string>({ options, value, onChange, testid }: { options: readonly T[]; value: T[]; onChange: (v: T[]) => void; testid?: (o: T) => string }) {
+  return <div className="flex flex-wrap gap-1.5">{options.map((o) => <Chip key={o} selected={value.includes(o)} data-testid={testid?.(o)} onClick={() => onChange(value.includes(o) ? value.filter((x) => x !== o) : [...value, o])}>{o}</Chip>)}</div>
+}
+function NumInput({ value, onChange, placeholder, max }: { value: number | null; onChange: (v: number | null) => void; placeholder: string; max: number }) {
+  return <Input type="number" inputMode="numeric" min={0} max={max} value={value ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} className="h-10 w-28 rounded-xl border-line bg-card" />
 }
 
 export function EntryEditor({ value, tz, onChange, onRemove }:
   { value: Entry; tz: string; onChange: (v: Entry) => void; onRemove?: () => void }) {
   const set = (data: Entry['data']) => onChange({ ...value, data } as Entry)
   return (
-    <div className="mt-1 space-y-2 rounded-lg border bg-neutral-50 p-2 text-sm">
-      <label className="block">시각
-        <input type="datetime-local" value={toLocalInput(value.occurred_at, tz)}
-          onChange={(e) => { if (!e.target.value) return; onChange({ ...value, occurred_at: fromLocalInput(e.target.value, tz, value.occurred_at), time_precision: 'exact' }) }}
-          className="ml-2 rounded border p-1" data-testid="edit-time" />
-      </label>
+    <div className="mt-1 space-y-4 rounded-2xl border border-line bg-bg p-3 text-[14px]">
+      <Field label="언제">
+        <QuickTime iso={value.occurred_at} precision={value.time_precision} tz={tz} onChange={(iso, precision) => onChange({ ...value, occurred_at: iso, time_precision: precision })} />
+      </Field>
 
-      {value.kind === 'meal' && (
-        <div className="space-y-2">
-          <Sel label="끼니" value={value.data.meal_type} options={['아침', '점심', '저녁', '간식'] as const} allowNull onChange={(v) => set({ ...value.data, meal_type: v })} />
-          {value.data.foods.map((f, i) => (
-            <div key={i} className="rounded border bg-white p-2">
-              <input value={f.name} placeholder="음식 이름" onChange={(e) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} className="mb-1 w-full rounded border p-1" data-testid="food-name" />
-              <TagEditor tags={f.ingredients} onChange={(t) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, ingredients: t } : x)) })} />
-              <Sel label="양" value={f.amount} options={AMOUNTS} allowNull onChange={(v) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, amount: v } : x)) })} />
-              <button type="button" onClick={() => set({ ...value.data, foods: value.data.foods.filter((_, j) => j !== i) })} className="text-xs text-red-700" data-testid="food-remove">이 음식 빼기</button>
+      {value.kind === 'meal' && (<>
+        <Field label="끼니"><ChipRow options={MEAL_TYPES} value={value.data.meal_type} onChange={(v) => set({ ...value.data, meal_type: v })} /></Field>
+        {value.data.foods.map((f, i) => (
+          <div key={i} className="space-y-2 rounded-xl border border-line bg-card p-3">
+            <Input value={f.name} placeholder="음식 이름" data-testid="food-name" onChange={(e) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} className="h-10 rounded-xl border-line" />
+            <TagEditor tags={f.ingredients} onChange={(t) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, ingredients: t } : x)) })} />
+            <div className="flex items-center justify-between">
+              <ChipRow options={AMOUNTS} value={f.amount} onChange={(v) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, amount: v } : x)) })} />
+              <button type="button" onClick={() => set({ ...value.data, foods: value.data.foods.filter((_, j) => j !== i) })} className="text-[12px] text-warn" data-testid="food-remove">이 음식 빼기</button>
             </div>
-          ))}
-          <button onClick={() => set({ ...value.data, foods: [...value.data.foods, { name: '', ingredients: [], amount: null }] })} className="text-xs underline">+ 음식</button>
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {EATING_PATTERNS.map((p) => (
-              <label key={p} className="text-xs">
-                <input type="checkbox" checked={value.data.eating_pattern.includes(p)} data-testid={`pattern-${p}`}
-                  onChange={(e) => set({ ...value.data, eating_pattern: e.target.checked ? [...value.data.eating_pattern, p] : value.data.eating_pattern.filter((x) => x !== p) })} /> {p}
-              </label>
-            ))}
           </div>
-        </div>
-      )}
+        ))}
+        <button type="button" onClick={() => set({ ...value.data, foods: [...value.data.foods, { name: '', ingredients: [], amount: null }] })} className="text-[14px] font-semibold text-accent">+ 음식 추가</button>
+        <Field label="어떻게 먹었나"><ChipMulti options={EATING_PATTERNS} value={value.data.eating_pattern} onChange={(v) => set({ ...value.data, eating_pattern: v })} testid={(p) => `pattern-${p}`} /></Field>
+      </>)}
+
       {value.kind === 'symptom' && (<>
-        <Sel label="종류" value={value.data.type} options={['복통', '팽만', '가스', '오심', '속쓰림', '두통', '피로', '기타'] as const} onChange={(v) => set({ ...value.data, type: v! })} />
-        <Num label="강도 0~10" value={value.data.severity} min={0} max={10} onChange={(v) => set({ ...value.data, severity: v })} />
+        <Field label="종류"><ChipRow options={SYMPTOMS} value={value.data.type} onChange={(v) => set({ ...value.data, type: v ?? '복통' })} /></Field>
+        <Field label="강도"><Segment10 value={value.data.severity} onChange={(v) => set({ ...value.data, severity: v })} labels={['없음', '못 견딤']} /></Field>
       </>)}
+
       {value.kind === 'bowel' && (<>
-        <Num label="브리스톨 1~7" value={value.data.bristol} min={1} max={7} onChange={(v) => set({ ...value.data, bristol: v })} />
-        <label className="block"><input type="checkbox" checked={!!value.data.urgency} onChange={(e) => set({ ...value.data, urgency: e.target.checked })} /> 급함</label>
-        <label className="block"><input type="checkbox" checked={value.data.nocturnal} onChange={(e) => set({ ...value.data, nocturnal: e.target.checked })} /> 야간</label>
-        <label className="block"><input type="checkbox" checked={!!value.data.blood} onChange={(e) => set({ ...value.data, blood: e.target.checked })} /> 혈변</label>
+        <Field label="모양 (브리스톨)"><BristolScale value={value.data.bristol} onChange={(v) => set({ ...value.data, bristol: v })} /></Field>
+        <Field label="함께">
+          <div className="flex flex-wrap gap-1.5">
+            <Chip tone="warn" selected={!!value.data.urgency} onClick={() => set({ ...value.data, urgency: !value.data.urgency })}>급했음</Chip>
+            <Chip tone="warn" selected={value.data.nocturnal} onClick={() => set({ ...value.data, nocturnal: !value.data.nocturnal })}>야간</Chip>
+            <Chip tone="warn" selected={!!value.data.blood} onClick={() => set({ ...value.data, blood: !value.data.blood })}>혈변</Chip>
+          </div>
+        </Field>
       </>)}
+
       {value.kind === 'sleep' && (<>
-        <Num label="잘 잤다 0~10" value={value.data.quality} min={0} max={10} onChange={(v) => set({ ...value.data, quality: v })} />
-        <Num label="시간" value={value.data.hours} min={0} max={24} onChange={(v) => set({ ...value.data, hours: v })} />
+        <Field label="잘 잤다"><Segment10 value={value.data.quality} onChange={(v) => set({ ...value.data, quality: v })} labels={['전혀', '푹']} /></Field>
+        <Field label="잔 시간"><NumInput value={value.data.hours} onChange={(v) => set({ ...value.data, hours: v })} placeholder="시간" max={24} /></Field>
       </>)}
+
       {value.kind === 'stress' && (<>
-        <Num label="스트레스 0~10" value={value.data.level} min={0} max={10} onChange={(v) => set({ ...value.data, level: v })} />
-        <input value={value.data.cause ?? ''} placeholder="원인" onChange={(e) => set({ ...value.data, cause: e.target.value || null })} className="w-full rounded border p-1" />
+        <Field label="스트레스"><Segment10 value={value.data.level} onChange={(v) => set({ ...value.data, level: v })} labels={['없음', '극심']} /></Field>
+        <Field label="원인"><Input value={value.data.cause ?? ''} placeholder="한 마디" onChange={(e) => set({ ...value.data, cause: e.target.value || null })} className="h-10 rounded-xl border-line bg-card" /></Field>
       </>)}
+
       {value.kind === 'exercise' && (<>
-        <Sel label="종류" value={value.data.type} options={['걷기', '달리기', '자전거', '수영', '근력', '요가', '기타'] as const} onChange={(v) => set({ ...value.data, type: v! })} />
-        <Num label="분" value={value.data.minutes} min={0} max={1440} onChange={(v) => set({ ...value.data, minutes: v })} />
-        <Sel label="강도" value={value.data.intensity} options={['낮음', '중간', '높음'] as const} allowNull onChange={(v) => set({ ...value.data, intensity: v })} />
+        <Field label="종류"><ChipRow options={EXERCISES} value={value.data.type} onChange={(v) => set({ ...value.data, type: v ?? '걷기' })} /></Field>
+        <div className="flex gap-4">
+          <Field label="분"><NumInput value={value.data.minutes} onChange={(v) => set({ ...value.data, minutes: v })} placeholder="분" max={1440} /></Field>
+          <Field label="강도"><ChipRow options={INTENSITY} value={value.data.intensity} onChange={(v) => set({ ...value.data, intensity: v })} /></Field>
+        </div>
       </>)}
+
       {value.kind === 'medication' && (<>
-        <input value={value.data.name} placeholder="약 이름" onChange={(e) => set({ ...value.data, name: e.target.value })} className="w-full rounded border p-1" />
-        <input value={value.data.dose ?? ''} placeholder="용량" onChange={(e) => set({ ...value.data, dose: e.target.value || null })} className="w-full rounded border p-1" />
+        <Field label="약 이름"><Input value={value.data.name} placeholder="예: 메트포르민" onChange={(e) => set({ ...value.data, name: e.target.value })} className="h-10 rounded-xl border-line bg-card" /></Field>
+        <Field label="용량"><Input value={value.data.dose ?? ''} placeholder="예: 500mg" onChange={(e) => set({ ...value.data, dose: e.target.value || null })} className="h-10 rounded-xl border-line bg-card" /></Field>
       </>)}
+
       {value.kind === 'cycle' && (
-        <Sel label="월경" value={value.data.event} options={['시작', '진행중', '종료', '배란 추정'] as const} onChange={(v) => set({ ...value.data, event: v! })} />
+        <Field label="월경"><ChipRow options={CYCLE} value={value.data.event} onChange={(v) => set({ ...value.data, event: v ?? '시작' })} /></Field>
       )}
+
       {value.kind === 'note' && (
-        <textarea value={value.data.text} onChange={(e) => set({ ...value.data, text: e.target.value })} className="w-full rounded border p-1" />
+        <Field label="메모"><Textarea value={value.data.text} rows={3} onChange={(e) => set({ ...value.data, text: e.target.value })} className="rounded-xl border-line bg-card" /></Field>
       )}
-      {onRemove && <button onClick={onRemove} className="text-red-700">이 항목 빼기</button>}
+
+      {onRemove && <button type="button" onClick={onRemove} className="text-[14px] text-warn">이 항목 빼기</button>}
     </div>
   )
 }
