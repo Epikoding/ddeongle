@@ -32,4 +32,9 @@ describe('BristolScale', () => {
       expect(render(n), `${n}칸`).not.toContain('border-accent')
     }
   })
+  it('탭 정지점은 언제나 한 칸뿐이다', () => {
+    for (const v of [null, 1, 4, 7]) {
+      expect(render(v).match(/tabindex="0"/g)?.length, `${v}`).toBe(1)
+    }
+  })
 })

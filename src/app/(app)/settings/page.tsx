@@ -72,8 +72,12 @@ export default function SettingsPage() {
     } catch (err) { setExportMsg('내보내지 못했습니다. ' + toMsg(err)) }
     finally { setExporting(false) }
   }
-  async function signOut() { await createClient().auth.signOut(); window.location.href = '/login' }
-  const fmtDate = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'numeric', day: 'numeric' }).format(new Date(iso))
+  async function signOut() {
+    await createClient().auth.signOut()
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- 전체 리로드로 세션 잔재를 비운다
+    window.location.href = '/login'
+  }
+  const fmtDate = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'long', day: 'numeric' }).format(new Date(iso))
 
   return (
     <main className="pb-6">
@@ -97,9 +101,9 @@ export default function SettingsPage() {
       </Card>
       <Card title="내보내기" id="export">
         <div className="flex items-center gap-2 text-[14px]">
-          <input type="date" aria-label="시작일" value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 flex-1 rounded-xl border border-line bg-bg px-2" />
+          <input type="date" aria-label="시작일" value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-bg px-2 text-[16px]" />
           <span className="text-mute">~</span>
-          <input type="date" aria-label="종료일" value={to} onChange={(e) => setTo(e.target.value)} className="h-10 flex-1 rounded-xl border border-line bg-bg px-2" />
+          <input type="date" aria-label="종료일" value={to} onChange={(e) => setTo(e.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-bg px-2 text-[16px]" />
         </div>
         <Button onClick={download} disabled={!from || !to || from > to || exporting} className="mt-3 h-10 w-full rounded-xl font-semibold">CSV 내려받기</Button>
         {exportMsg && <p role="alert" className="mt-2 text-[12px] text-warn">{exportMsg}</p>}

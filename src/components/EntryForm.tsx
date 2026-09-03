@@ -80,7 +80,7 @@ function ChipMulti<T extends string>({ options, value, onChange, testid, labelle
   return <div role={labelledBy ? 'group' : undefined} aria-labelledby={labelledBy} className="flex flex-wrap gap-1.5">{options.map((o) => <Chip key={o} selected={value.includes(o)} data-testid={testid?.(o)} onClick={() => onChange(value.includes(o) ? value.filter((x) => x !== o) : [...value, o])}>{o}</Chip>)}</div>
 }
 function NumInput({ id, value, onChange, max }: { id?: string; value: number | null; onChange: (v: number | null) => void; max: number }) {
-  return <Input id={id} type="number" inputMode="numeric" min={0} max={max} value={value ?? ''} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} className="h-10 w-28 rounded-xl border-line bg-card" />
+  return <Input id={id} type="number" inputMode="numeric" min={0} max={max} step={1} value={value ?? ''} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} className="h-10 w-28 rounded-xl border-line bg-card" />
 }
 
 export function EntryEditor({ value, tz, onChange, onRemove }:

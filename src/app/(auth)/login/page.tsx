@@ -38,20 +38,26 @@ export default function LoginPage() {
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 pb-16">
       <h1 className="text-[24px] font-bold tracking-[-0.01em]">장 기록</h1>
       <p className="mt-1 mb-8 text-[14px] text-mute">설사 유발요인을 찾는 일기</p>
-      {state === 'sent' ? (
-        <p className="rounded-xl bg-accent-soft p-4 text-[14px]">로그인 링크를 보냈습니다. 이메일을 열어 링크를 눌러 주세요.</p>
-      ) : (
-        <>
-          <Suspense fallback={null}><LinkErrorNotice /></Suspense>
-          <form onSubmit={submit} className="space-y-3">
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" autoComplete="email" className="h-12 rounded-xl border-line bg-card text-[16px] md:text-[16px]" />
-            <Button type="submit" disabled={state === 'sending'} className="h-12 w-full rounded-xl text-[16px] font-bold">로그인 링크 받기</Button>
-            {(state === 'not_invited' || state === 'error') && (
-              <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{message}</p>
-            )}
-          </form>
-        </>
+      {/* 보낸 뒤에도 폼을 지우지 않는다 — 주소를 잘못 적었으면 그 자리에서 고쳐야 하고, 폼이 통째로
+          사라지면 방금 누른 버튼과 함께 포커스도 사라진다. 안내 자리는 늘 두고 문구만 갈아 끼운다. */}
+      <div role="status">
+        {state === 'sent' && (
+          <p className="rounded-xl bg-accent-soft p-4 text-[14px]">로그인 링크를 보냈습니다. 이메일을 열어 링크를 눌러 주세요.</p>
+        )}
+      </div>
+      {state === 'sent' && (
+        <button type="button" onClick={() => setState('idle')} className="mt-2 mb-3 self-start py-1 text-[14px] font-semibold text-accent">
+          다른 이메일로 다시 보내기
+        </button>
       )}
+      <Suspense fallback={null}><LinkErrorNotice /></Suspense>
+      <form onSubmit={submit} className="space-y-3">
+        <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" autoComplete="email" className="h-12 rounded-xl border-line bg-card text-[16px] md:text-[16px]" />
+        <Button type="submit" disabled={state === 'sending'} className="h-12 w-full rounded-xl text-[16px] font-bold">로그인 링크 받기</Button>
+        {(state === 'not_invited' || state === 'error') && (
+          <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{message}</p>
+        )}
+      </form>
     </main>
   )
 }

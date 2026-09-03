@@ -14,7 +14,7 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (t: st
         {tags.map((t) => <Chip key={t} tone={isWatched(t) ? 'warn' : 'default'} selected={isWatched(t)} onRemove={() => onChange(tags.filter((x) => x !== t))}>{t}</Chip>)}
         <input value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); add(draft) } }}
-          placeholder="+ 재료" className="h-8 w-24 rounded-full border border-dashed border-line bg-transparent px-3 text-[14px]" data-testid="tag-input" />
+          placeholder="+ 재료" className="h-8 w-24 rounded-full border border-dashed border-line bg-transparent px-3 text-[16px]" data-testid="tag-input" />
       </div>
       {suggestions.length > 0 && (
         <div className="flex flex-wrap gap-1">

@@ -1,4 +1,5 @@
 'use client'
+import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 export const BRISTOL: { n: 1 | 2 | 3 | 4 | 5 | 6 | 7; label: string }[] = [
@@ -16,14 +17,29 @@ const SHAPES: Record<number, string> = {
   7: '<path d="M3 15c4-4 6 2 9-1s5-2 9 1v4H3z"/>',
 }
 
+// ARIA 라디오 그룹 규약 — 탭 정지점은 하나(고른 칸, 없으면 첫 칸)이고 칸 사이는 화살표·Home·End로 옮긴다.
+const STEP: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
+
 export function BristolScale({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const group = useRef<HTMLDivElement>(null)
+  const stop = Math.max(0, BRISTOL.findIndex((b) => b.n === value))
+  function move(e: React.KeyboardEvent, i: number) {
+    const step = STEP[e.key]
+    const last = BRISTOL.length - 1
+    const next = step !== undefined ? (i + step + BRISTOL.length) % BRISTOL.length : e.key === 'Home' ? 0 : e.key === 'End' ? last : -1
+    if (next < 0) return
+    e.preventDefault()
+    onChange(BRISTOL[next].n)
+    group.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
+  }
   return (
-    <div className="grid grid-cols-7 gap-1" role="radiogroup" aria-label="브리스톨 척도">
-      {BRISTOL.map(({ n, label }) => {
+    <div ref={group} className="grid grid-cols-7 gap-1" role="radiogroup" aria-label="브리스톨 척도">
+      {BRISTOL.map(({ n, label }, i) => {
         const on = value === n
         const warn = n >= 6
         return (
-          <button key={n} type="button" role="radio" aria-checked={on} aria-label={`${n} ${label}`} onClick={() => onChange(on ? null : n)}
+          <button key={n} type="button" role="radio" aria-checked={on} aria-label={`${n} ${label}`} tabIndex={i === stop ? 0 : -1}
+            onKeyDown={(e) => move(e, i)} onClick={() => onChange(on ? null : n)}
             className={cn('flex aspect-[1/1.35] flex-col items-center justify-center gap-0.5 rounded-[10px] border text-[12px]',
               on ? (warn ? 'border-warn bg-warn-soft text-warn' : 'border-accent bg-accent-soft text-accent') : 'border-line bg-card text-mute')}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill={on && warn ? 'var(--warn)' : on ? 'var(--accent)' : 'var(--mute)'}
