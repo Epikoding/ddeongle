@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getProfile, suspectRanking, suspectDetail, type RankingRow, type DetailRow } from '@/lib/db'
@@ -18,6 +18,9 @@ export default function AnalysisPage() {
   const [picked, setPicked] = useState<RankingRow | null>(null)
   const [detail, setDetail] = useState<DetailRow[]>([])
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
+  const tokenRef = useRef(0) // 상세 조회 경쟁 가드: 마지막으로 요청한 것만 화면에 반영한다
   const loadKey = `${tz}|${days}|${windowHours}|${target}`
   const loading = loadedKey !== loadKey
 
@@ -31,15 +34,23 @@ export default function AnalysisPage() {
   useEffect(() => {
     const sb = createClient()
     let alive = true
+    tokenRef.current += 1 // 이전 조건으로 날아간 상세 응답이 새 순위표에 얹히지 않게 무효화
     suspectRanking(sb, { ...range(), windowHours, target })
-      .then((rs) => { if (alive) { setRows(rs); setPicked(null) } })
+      .then((rs) => { if (alive) { setRows(rs); setPicked(null); setLoadError(null) } })
+      .catch(() => { if (alive) { setRows([]); setPicked(null); setLoadError('순위표를 불러오지 못했습니다.') } })
       .finally(() => { if (alive) setLoadedKey(loadKey) })
     return () => { alive = false }
   }, [tz, days, windowHours, target]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function pick(r: RankingRow) {
-    setPicked(r)
-    setDetail(await suspectDetail(createClient(), { ...range(), windowHours, target, grp: r.grp, candidate: r.candidate }))
+    setPicked(r); setDetail([]); setDetailError(null)
+    const t = ++tokenRef.current
+    try {
+      const d = await suspectDetail(createClient(), { ...range(), windowHours, target, grp: r.grp, candidate: r.candidate })
+      if (t === tokenRef.current) setDetail(d)
+    } catch {
+      if (t === tokenRef.current) setDetailError('상세를 불러오지 못했습니다.')
+    }
   }
   const fmt = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
 
@@ -61,11 +72,14 @@ export default function AnalysisPage() {
         ))}
       </div>
       <p className="mb-2 text-xs text-neutral-500">연관은 가설입니다. 확인은 한 가지씩 3일 재도입으로.</p>
-      {loading ? <p className="text-neutral-500">계산 중…</p> : rows.length === 0 ? <p className="text-neutral-500">기간 안에 기록이 없습니다.</p> :
+      {loading ? <p className="text-neutral-500">계산 중…</p> :
+        loadError ? <p role="alert" className="text-red-600">{loadError}</p> :
+        rows.length === 0 ? <p className="text-neutral-500">기간 안에 기록이 없습니다.</p> :
         <RankingTable rows={rows} onPick={pick} />}
       {picked && !loading && (
         <section className="mt-4 rounded-xl border bg-white p-3 text-sm">
           <h2 className="font-semibold">{GRP_LABEL[picked.grp]} · {picked.candidate}</h2>
+          {detailError && <p role="alert" className="mt-2 text-red-600">{detailError}</p>}
           <ul className="mt-2 space-y-1">
             {detail.map((d) => (
               <li key={d.exposure_id} className="flex justify-between">
