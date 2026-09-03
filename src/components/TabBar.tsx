@@ -14,14 +14,14 @@ export function TabBar() {
   const path = usePathname()
   return (
     <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-line bg-card pb-[env(safe-area-inset-bottom)]">
-      <ul className="flex h-16 items-stretch">
+      <ul role="list" className="flex h-16 items-stretch">
         {TABS.map(({ href, label, icon: Icon, match }) => {
           const on = match(path)
           return (
             <li key={href} className="flex-1">
               <Link href={href} aria-current={on ? 'page' : undefined}
-                className={cn('flex h-full flex-col items-center justify-center gap-0.5 text-[11px]', on ? 'font-bold text-accent' : 'text-mute')}>
-                <Icon size={22} strokeWidth={on ? 2.25 : 1.75} />{label}
+                className={cn('flex h-full flex-col items-center justify-center gap-0.5 text-[12px]', on ? 'font-bold text-accent' : 'text-mute')}>
+                <Icon size={22} strokeWidth={on ? 2.25 : 1.75} aria-hidden />{label}
               </Link>
             </li>
           )
