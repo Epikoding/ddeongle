@@ -24,7 +24,7 @@
   --accent-soft: #f1effb;
   --warn: #b14536;
   --warn-soft: #f9e3df;
-  --line: #eeedf5;
+  --line: #e3e1ee;
   --radius: 0.75rem;
   /* 기본 버튼 글자색 — 다크 블록이 덮도록 :root에 둔다(공용 매핑 블록은 다크보다 뒤라 덮인다) */
   --primary-foreground: #ffffff;
