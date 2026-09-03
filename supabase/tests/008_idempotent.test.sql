@@ -1,5 +1,5 @@
 begin;
-select plan(5);
+select plan(6);
 
 insert into public.invites(email) values ('a@test.local');
 insert into auth.users (id, email, instance_id, aud, role) values
@@ -29,6 +29,16 @@ select is(
   (select array_agg(x order by x) from unnest(string_to_array(current_setting('test.r2'), ',')) x),
   (select array_agg(x order by x) from unnest(string_to_array(current_setting('test.r1'), ',')) x),
   '두 번째 호출이 첫 번째와 같은 entries id를 돌려준다');
+
+-- 부분 저장 뒤 남은 항목을 새 client_id로 다시 보내면 새로 들어간다
+-- (확인 시트가 저장 성공 때마다 client_id를 돌리는 이유 — 같은 id로 보내면 조기 반환에 먹혀 사라진다)
+select public.save_entries(
+  '{"text":"아까 12시에 김치찌개 먹었고 지금 배가 아파","source":"voice","reference_at":"2026-09-03T20:00:00+09:00","pasted_json":null,"client_id":"22222222-2222-2222-2222-222222222222"}'::jsonb,
+  '[{"kind":"note","occurred_at":"2026-09-03T18:00:00+09:00","time_precision":"exact","source_text":null,"data":{"text":"시각을 정한 뒤 저장한 항목"}}]'::jsonb);
+select is(
+  array[(select count(*) from public.raw_inputs where client_id is not null), (select count(*) from public.entries)],
+  array[2::bigint, 3::bigint],
+  '다른 client_id로 보내면 새 raw_inputs·entries가 들어간다');
 
 -- client_id가 없으면 멱등이 아니다(예전 동작 유지)
 select public.save_entries('{"text":"메모","source":"form","reference_at":"2026-09-03T21:00:00+09:00","pasted_json":null}'::jsonb,

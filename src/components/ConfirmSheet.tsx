@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { saveEntries, type RawInput } from '@/lib/db'
-import { enqueue, dequeue, type PendingItem } from '@/lib/queue'
+import { enqueue, dequeue, newId, type PendingItem } from '@/lib/queue'
 import { isFuture } from '@/lib/time'
 import type { PasteResult } from '@/lib/parse-paste'
 import { entrySchema, type Entry } from '@/lib/schemas'
@@ -21,6 +21,9 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
   const [queuedId, setQueuedId] = useState<string | null>(null)
   // 저장 직전 재검사에서 걸린 항목 — 인덱스별 사유. 고칠 때까지 저장에서 뺀다
   const [problems, setProblems] = useState<Record<number, string>>({})
+  // 이 회차의 client_id. 저장에 성공하고도 남은 항목이 있으면 새 값으로 돌린다 —
+  // 같은 id로 다시 보내면 서버가 "이미 받은 회차"로 보고 조기 반환해 고친 항목이 조용히 사라진다
+  const [clientId, setClientId] = useState<string | undefined>(raw.client_id)
 
   const blocked = entries.filter((e, i) => e.time_precision === 'unknown' || problems[i] !== undefined).length
   // 미래 시각 판정 기준은 렌더 시점이 아니라 프롬프트에 넣은 기준 시각이다 (명세 §4.2)
@@ -42,8 +45,9 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
       return
     }
     setBusy(true)
+    const payload: RawInput = { ...raw, client_id: clientId }
     try {
-      await saveEntries(createClient(), raw, ready)
+      await saveEntries(createClient(), payload, ready)
       if (queuedId) { dequeue(queuedId); setQueuedId(null) } // 재시도로 성공 — 큐에 남기면 두 번 들어간다
       // 저장 못 한 항목(시각 미정·모양 오류)은 지우지 않고 시트에 남긴다 (명세 §4.2 "고치기 전까지 제외")
       const rest = entries.map((e, i) => ({ e, i })).filter(({ e, i }) => e.time_precision === 'unknown' || failed[i] !== undefined)
@@ -53,12 +57,14 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
       setProblems(restProblems)
       setEditing(null)
       setMsg(rest.length > 0 ? `${ready.length}건 저장했습니다. 남은 ${rest.length}건은 시각을 정한 뒤 저장하세요.` : null)
+      if (rest.length > 0 && clientId) setClientId(newId()) // 남은 항목은 새 회차로 보낸다
       onSaved(rest.length)
     } catch (err) {
       const kept = `저장하지 못해 폰에 보관했습니다. 다음에 열 때 다시 보냅니다. (${(err as Error).message})`
       // 이미 보관해 둔 회차가 있어도 편집분이 반영되도록 새로 넣고 옛것을 뺀다(넣기 실패 시 옛것을 잃지 않게 순서를 지킨다)
       let queued: PendingItem | null = null
-      try { queued = enqueue({ raw, entries: ready }) } catch { queued = null }
+      // 실패한 회차의 client_id는 그대로 둔다 — 서버에 들어갔을 수도 있어서, 같은 id여야 두 번 들어가지 않는다
+      try { queued = enqueue({ raw: payload, entries: ready }) } catch { queued = null }
       if (queued) {
         if (queuedId) dequeue(queuedId)
         setQueuedId(queued.id); setMsg(kept)
