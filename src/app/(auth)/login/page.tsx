@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 function LinkErrorNotice() {
   if (useSearchParams().get('error') !== 'link') return null // /auth/callback이 링크 교환에 실패하면 ?error=link로 되돌려 보낸다
   return (
-    <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">
+    <p role="alert" className="mb-3 rounded-xl bg-warn-soft p-3 text-[12px] text-warn">
       로그인 링크가 만료됐거나 다른 브라우저에서 열렸습니다. 링크를 요청한 브라우저에서 다시 시도해 주세요.
     </p>
   )
@@ -44,7 +44,7 @@ export default function LoginPage() {
         <>
           <Suspense fallback={null}><LinkErrorNotice /></Suspense>
           <form onSubmit={submit} className="space-y-3">
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" autoComplete="email" className="h-12 rounded-xl border-line bg-card text-[16px]" />
+            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" autoComplete="email" className="h-12 rounded-xl border-line bg-card text-[16px] md:text-[16px]" />
             <Button type="submit" disabled={state === 'sending'} className="h-12 w-full rounded-xl text-[16px] font-bold">로그인 링크 받기</Button>
             {(state === 'not_invited' || state === 'error') && (
               <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{message}</p>

@@ -28,5 +28,6 @@ export async function loginUrlFor(email: string): Promise<string> {
 export async function removeInvite(email: string): Promise<void> {
   const { url, service } = localKeys()
   const admin = createClient(url, service, { auth: { persistSession: false } })
-  await admin.from('invites').delete().eq('email', email)
+  const { error } = await admin.from('invites').delete().eq('email', email)
+  if (error) throw error
 }
