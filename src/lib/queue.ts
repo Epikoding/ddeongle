@@ -23,9 +23,18 @@ function write(items: PendingItem[], s?: Storage): boolean {
   try { st.setItem(KEY, JSON.stringify(items)); return true } catch { return false /* 저장 공간 부족 등 */ }
 }
 
-// randomUUID는 보안 컨텍스트(https·localhost)에서만 있다 — 폰에서 http://192.168.x.x 로 열면 없다
+// randomUUID는 보안 컨텍스트(https·localhost)에서만 있다 — 폰에서 http://192.168.x.x 로 열면 없다.
+// 이 값은 서버로 가는 client_id이기도 하다 — uuid 모양이 아니면 ::uuid 캐스팅에서 터져 큐가 영영 안 빠진다.
 export function newId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const uuid = globalThis.crypto?.randomUUID?.()
+  if (uuid) return uuid
+  const b = new Uint8Array(16)
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(b) // 비보안 컨텍스트에도 이건 있다
+  else for (let i = 0; i < b.length; i++) b[i] = Math.floor(Math.random() * 256)
+  b[6] = (b[6] & 0x0f) | 0x40 // version 4
+  b[8] = (b[8] & 0x3f) | 0x80 // variant 10
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
 // 큐가 바뀌면 알린다 — PendingBanner가 이걸로 다시 읽는다(같은 탭은 storage 이벤트가 안 온다)
