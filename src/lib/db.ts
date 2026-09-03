@@ -4,7 +4,8 @@ import type { FoodHint } from './prompt'
 import { dayRange } from './time'
 
 export type EntryRow = Entry & { id: string; raw_input_id: string | null; created_at: string }
-export type RawInput = { text: string; source: 'voice' | 'form'; reference_at: string; pasted_json: unknown }
+// client_id: 같은 회차를 두 번 보내도 서버가 한 번만 받도록 클라이언트가 붙이는 식별자(오프라인 재전송)
+export type RawInput = { text: string; source: 'voice' | 'form'; reference_at: string; pasted_json: unknown; client_id?: string }
 export type RankingRow = {
   candidate: string; grp: string; exposed_n: number; exposed_hits: number
   control_n: number; control_hits: number; ratio: number | null; enough: boolean
@@ -40,7 +41,7 @@ export async function getEntry(sb: SupabaseClient, id: string): Promise<EntryRow
 
 export async function updateEntry(sb: SupabaseClient, id: string,
   patch: { occurred_at?: string; time_precision?: Entry['time_precision']; data?: Entry['data'] }) {
-  const rows = must(await sb.from('entries').update(patch).eq('id', id).select('id')) as { id: string }[]
+  const rows = must(await sb.from('entries').update(patch).eq('id', id).is('deleted_at', null).select('id')) as { id: string }[]
   if (rows.length === 0) throw new Error('not_found')
   if (patch.data && 'foods' in patch.data) {
     const tags = patch.data.foods.flatMap((f) => f.ingredients)
@@ -50,7 +51,7 @@ export async function updateEntry(sb: SupabaseClient, id: string,
 }
 
 export async function deleteEntry(sb: SupabaseClient, id: string) {
-  const rows = must(await sb.from('entries').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id')) as { id: string }[]
+  const rows = must(await sb.from('entries').update({ deleted_at: new Date().toISOString() }).eq('id', id).is('deleted_at', null).select('id')) as { id: string }[]
   if (rows.length === 0) throw new Error('not_found')
 }
 
