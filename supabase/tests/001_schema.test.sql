@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_table('public', 'profiles', 'profiles 표');
+select has_table('public', 'invites', 'invites 표');
+select has_table('public', 'raw_inputs', 'raw_inputs 표');
+select has_table('public', 'entries', 'entries 표');
+select has_table('public', 'entry_tags', 'entry_tags 표');
+select has_table('public', 'foods', 'foods 표');
+select col_type_is('public', 'entries', 'data', 'jsonb', 'entries.data는 jsonb');
+select has_index('public', 'entries', 'entries_user_occurred_idx', 'entries (user_id, occurred_at) 인덱스');
+select * from finish();
+rollback;
