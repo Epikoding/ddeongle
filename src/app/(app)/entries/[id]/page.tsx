@@ -65,7 +65,7 @@ export default function EntryPage() {
     <main className="pb-6">
       <header className="flex items-center gap-1 px-2 pt-3 pb-2">
         <button type="button" onClick={() => router.back()} aria-label="뒤로" className="rounded-full p-2 text-mute"><ChevronLeft size={22} /></button>
-        <span className="flex items-center gap-2 text-[20px] font-bold"><KindIcon kind={entry.kind} size={24} />{KIND_LABEL[entry.kind]} 수정</span>
+        <h1 className="flex items-center gap-2 text-[20px] font-bold"><KindIcon kind={entry.kind} size={24} />{KIND_LABEL[entry.kind]} 수정</h1>
       </header>
       <div className="px-4">
         <EntryEditor value={entry} tz={tz} onChange={(v) => setEntry({ ...entry, ...v } as EntryRow)} />

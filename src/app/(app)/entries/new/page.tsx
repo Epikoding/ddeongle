@@ -27,8 +27,8 @@ export default function NewEntryPage() {
   return (
     <main className="pb-6">
       <header className="flex items-center gap-1 px-2 pt-3 pb-2">
-        <button type="button" onClick={() => (entry ? setEntry(null) : router.back())} aria-label="뒤로" className="rounded-full p-2 text-mute"><ChevronLeft size={22} /></button>
-        {entry ? <span className="flex items-center gap-2 text-[20px] font-bold"><KindIcon kind={entry.kind} size={24} />{KIND_LABEL[entry.kind]}</span> : <span className="text-[20px] font-bold">무엇을 적을까요?</span>}
+        <button type="button" onClick={() => (entry ? setEntry(null) : router.back())} aria-label={entry ? '종류 다시 고르기' : '뒤로'} className="rounded-full p-2 text-mute"><ChevronLeft size={22} /></button>
+        {entry ? <h1 className="flex items-center gap-2 text-[20px] font-bold"><KindIcon kind={entry.kind} size={24} />{KIND_LABEL[entry.kind]}</h1> : <h1 className="text-[20px] font-bold">무엇을 적을까요?</h1>}
       </header>
       {!entry ? <KindPicker onPick={(k: Kind) => setEntry(blankEntry(k, new Date().toISOString()))} /> : (
         <div className="px-4">
