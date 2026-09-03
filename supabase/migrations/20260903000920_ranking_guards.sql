@@ -8,6 +8,9 @@
 --   coalesce((e.data->>'urgency')::boolean, false)
 --     → case when jsonb_typeof(e.data->'urgency') = 'boolean' then (e.data->>'urgency')::boolean else false end
 -- int 캐스트에 ::numeric을 한 번 거치는 이유: JSON 숫자 7.0은 typeof 'number'이지만 '7.0'::int는 실패한다.
+-- ::numeric::int는 0에서 먼 쪽으로 반올림한다(6.5 → 7) — bristol·quality·level은 정수 도메인이라 의도한 선택이다.
+-- 배열 확장(foods · eating_pattern)도 같은 이유로 jsonb_typeof 가드를 쓴다:
+-- coalesce는 SQL NULL만 잡아 JSON null을 통과시키고, jsonb_array_elements가 22023으로 죽는다.
 -- 시그니처·반환 컬럼·정렬은 그대로.
 
 create or replace function public.suspect_ranking(
@@ -44,9 +47,9 @@ meal_totals as (select count(*) as n, count(*) filter (where hit) as hits from m
 meal_cands as (
   select 'ingredient'::text as grp, t.tag as cand, m.id as meal_id, m.hit from meals m join public.entry_tags t on t.entry_id = m.id
   union all
-  select 'food', f->>'name', m.id, m.hit from meals m, jsonb_array_elements(coalesce(m.data->'foods','[]'::jsonb)) f where coalesce(f->>'name','') <> ''
+  select 'food', f->>'name', m.id, m.hit from meals m, jsonb_array_elements(case when jsonb_typeof(m.data->'foods') = 'array' then m.data->'foods' else '[]'::jsonb end) f where coalesce(f->>'name','') <> ''
   union all
-  select 'pattern', p, m.id, m.hit from meals m, jsonb_array_elements_text(coalesce(m.data->'eating_pattern','[]'::jsonb)) p
+  select 'pattern', p, m.id, m.hit from meals m, jsonb_array_elements_text(case when jsonb_typeof(m.data->'eating_pattern') = 'array' then m.data->'eating_pattern' else '[]'::jsonb end) p
 ),
 meal_stats as (
   select mc.grp, mc.cand,
@@ -123,7 +126,7 @@ exposures as (
   where e.user_id = me.uid and e.deleted_at is null and e.occurred_at between p_from and p_to
     and case p_grp
       when 'ingredient' then e.kind = 'meal' and exists (select 1 from public.entry_tags t where t.entry_id = e.id and t.tag = p_candidate)
-      when 'food'       then e.kind = 'meal' and exists (select 1 from jsonb_array_elements(coalesce(e.data->'foods','[]'::jsonb)) f where f->>'name' = p_candidate)
+      when 'food'       then e.kind = 'meal' and exists (select 1 from jsonb_array_elements(case when jsonb_typeof(e.data->'foods') = 'array' then e.data->'foods' else '[]'::jsonb end) f where f->>'name' = p_candidate)
       when 'pattern'    then e.kind = 'meal' and e.data->'eating_pattern' ? p_candidate
       when 'sleep'      then e.kind = 'sleep' and case when jsonb_typeof(e.data->'quality') = 'number' then (e.data->>'quality')::numeric::int else 10 end <= 4
       when 'stress'     then e.kind = 'stress' and case when jsonb_typeof(e.data->'level') = 'number' then (e.data->>'level')::numeric::int else 0 end >= 6

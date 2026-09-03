@@ -1,5 +1,5 @@
 begin;
-select plan(5);
+select plan(7);
 
 insert into public.invites(email) values ('a@test.local');
 insert into auth.users (id, email, instance_id, aud, role) values
@@ -42,6 +42,19 @@ select is((select count(*) filter (where hit) from public.suspect_detail('2026-0
 select is((select target_at from public.suspect_detail('2026-09-01T00:00:00+09:00', '2026-09-03T23:59:59+09:00', 8, 'diarrhea', 'ingredient', '마늘')
            where exposure_at = '2026-09-01T12:00:00+09:00'::timestamptz),
           '2026-09-01T14:00:00+09:00'::timestamptz, 'detail이 창 안 첫 표적을 가리킨다');
+
+-- foods / eating_pattern 이 JSON null 인 식사 한 건 추가 (006이 저장 가능한 모양으로 인증한 형태)
+select public.save_entries(null, '[
+  {"kind":"meal","occurred_at":"2026-09-02T18:00:00+09:00","time_precision":"exact","source_text":null,"data":{"meal_type":"저녁","foods":null,"eating_pattern":null}}
+]'::jsonb);
+
+select lives_ok(
+  $$ select count(*) from public.suspect_ranking('2026-09-01T00:00:00+09:00', '2026-09-03T23:59:59+09:00', 8, 'diarrhea') $$,
+  'foods/eating_pattern null이어도 순위표가 죽지 않는다');
+
+select lives_ok(
+  $$ select count(*) from public.suspect_detail('2026-09-01T00:00:00+09:00', '2026-09-03T23:59:59+09:00', 8, 'diarrhea', 'food', '김치찌개') $$,
+  'detail food 분기도 null foods에 안전');
 
 select * from finish();
 rollback;
