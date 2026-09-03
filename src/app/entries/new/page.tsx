@@ -11,7 +11,7 @@ export default function NewEntryPage() {
   const [tz, setTz] = useState('Asia/Seoul')
   const [entry, setEntry] = useState<Entry | null>(null)
   const [err, setErr] = useState<string | null>(null)
-  useEffect(() => { getProfile(createClient()).then((p) => setTz(p.timezone)) }, [])
+  useEffect(() => { getProfile(createClient()).then((p) => setTz(p.timezone)).catch(() => {}) }, [])
 
   async function save() {
     if (!entry) return

@@ -3,11 +3,11 @@ import { KINDS, KIND_ICON, KIND_LABEL, type Entry, type Kind, normalizeTag } fro
 import { isWatched } from '@/lib/watch-ingredients'
 import { useState } from 'react'
 
-function toLocalInput(iso: string, tz: string): string {
+export function toLocalInput(iso: string, tz: string): string {
   const p = new Intl.DateTimeFormat('sv-SE', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
   return p.replace(' ', 'T')
 }
-function fromLocalInput(v: string, tz: string, sampleIso: string): string {
+export function fromLocalInput(v: string, tz: string, sampleIso: string): string {
   const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(new Date(sampleIso)).find((x) => x.type === 'timeZoneName')!.value
   const off = name === 'GMT' ? '+00:00' : name.replace('GMT', '')
   return new Date(`${v}:00${off}`).toISOString()
@@ -27,6 +27,9 @@ export function blankEntry(kind: Kind, nowIso: string): Entry {
     case 'note': return { kind, ...base, data: { text: '' } }
   }
 }
+
+const AMOUNTS = ['적게', '보통', '많이'] as const
+const EATING_PATTERNS = ['급하게', '거른 끼니 후', '과식', '찬 음료', '기름진'] as const
 
 export function KindPicker({ onPick }: { onPick: (k: Kind) => void }) {
   return (
@@ -62,7 +65,7 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (t: string[])
       {tags.map((t) => (
         <button key={t} onClick={() => onChange(tags.filter((x) => x !== t))} className={`rounded-full border px-2 text-xs ${isWatched(t) ? 'border-amber-500 text-amber-800' : ''}`}>{t} ×</button>
       ))}
-      <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
+      <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); add() } }}
         placeholder="+ 재료" className="w-20 rounded border px-1 text-xs" data-testid="tag-input" />
     </div>
   )
@@ -75,7 +78,7 @@ export function EntryEditor({ value, tz, onChange, onRemove }:
     <div className="mt-1 space-y-2 rounded-lg border bg-neutral-50 p-2 text-sm">
       <label className="block">시각
         <input type="datetime-local" value={toLocalInput(value.occurred_at, tz)}
-          onChange={(e) => onChange({ ...value, occurred_at: fromLocalInput(e.target.value, tz, value.occurred_at), time_precision: 'exact' })}
+          onChange={(e) => { if (!e.target.value) return; onChange({ ...value, occurred_at: fromLocalInput(e.target.value, tz, value.occurred_at), time_precision: 'exact' }) }}
           className="ml-2 rounded border p-1" data-testid="edit-time" />
       </label>
 
@@ -86,9 +89,19 @@ export function EntryEditor({ value, tz, onChange, onRemove }:
             <div key={i} className="rounded border bg-white p-2">
               <input value={f.name} placeholder="음식 이름" onChange={(e) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} className="mb-1 w-full rounded border p-1" data-testid="food-name" />
               <TagEditor tags={f.ingredients} onChange={(t) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, ingredients: t } : x)) })} />
+              <Sel label="양" value={f.amount} options={AMOUNTS} allowNull onChange={(v) => set({ ...value.data, foods: value.data.foods.map((x, j) => (j === i ? { ...x, amount: v } : x)) })} />
+              <button type="button" onClick={() => set({ ...value.data, foods: value.data.foods.filter((_, j) => j !== i) })} className="text-xs text-red-700" data-testid="food-remove">이 음식 빼기</button>
             </div>
           ))}
           <button onClick={() => set({ ...value.data, foods: [...value.data.foods, { name: '', ingredients: [], amount: null }] })} className="text-xs underline">+ 음식</button>
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {EATING_PATTERNS.map((p) => (
+              <label key={p} className="text-xs">
+                <input type="checkbox" checked={value.data.eating_pattern.includes(p)} data-testid={`pattern-${p}`}
+                  onChange={(e) => set({ ...value.data, eating_pattern: e.target.checked ? [...value.data.eating_pattern, p] : value.data.eating_pattern.filter((x) => x !== p) })} /> {p}
+              </label>
+            ))}
+          </div>
         </div>
       )}
       {value.kind === 'symptom' && (<>
