@@ -1,5 +1,6 @@
 'use client'
-import { KINDS, KIND_ICON, KIND_LABEL, type Entry, type Kind, normalizeTag } from '@/lib/schemas'
+import { KINDS, KIND_LABEL, type Entry, type Kind, normalizeTag } from '@/lib/schemas'
+import { KindIcon } from '@/components/ui/KindIcon'
 import { isWatched } from '@/lib/watch-ingredients'
 import { useState } from 'react'
 
@@ -43,7 +44,7 @@ export function KindPicker({ onPick }: { onPick: (k: Kind) => void }) {
     <div className="grid grid-cols-3 gap-2">
       {KINDS.map((k) => (
         <button key={k} onClick={() => onPick(k)} className="rounded-xl border bg-white p-3 text-sm" data-testid={`kind-${k}`}>
-          <div className="text-2xl">{KIND_ICON[k]}</div>{KIND_LABEL[k]}
+          <div><KindIcon kind={k} size={24} /></div>{KIND_LABEL[k]}
         </button>
       ))}
     </div>

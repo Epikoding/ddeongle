@@ -92,7 +92,3 @@ export const KIND_LABEL: Record<Kind, string> = {
   meal: '식사', symptom: '증상', bowel: '배변', sleep: '수면', stress: '스트레스',
   exercise: '운동', medication: '약', cycle: '월경', note: '메모',
 }
-export const KIND_ICON: Record<Kind, string> = {
-  meal: '🍚', symptom: '🤕', bowel: '💩', sleep: '😴', stress: '😣',
-  exercise: '🏃', medication: '💊', cycle: '🩸', note: '📝',
-}

@@ -1,4 +1,5 @@
-import { KIND_ICON, KIND_LABEL, type Entry } from '@/lib/schemas'
+import { KIND_LABEL, type Entry } from '@/lib/schemas'
+import { KindIcon } from '@/components/ui/KindIcon'
 import { isWatched } from '@/lib/watch-ingredients'
 
 export function summarizeEntry(e: Entry): string {
@@ -32,7 +33,7 @@ export function EntryCard({ entry, tz, onClick, tone = 'normal' }:
   return (
     <div onClick={onClick} className={`rounded-xl border bg-white p-3 ${border} ${onClick ? 'cursor-pointer active:bg-neutral-100' : ''}`}>
       <div className="flex justify-between text-xs text-neutral-500">
-        <span>{KIND_ICON[entry.kind]} {KIND_LABEL[entry.kind]}{entry.kind === 'meal' && entry.data.meal_type ? ` · ${entry.data.meal_type}` : ''}</span>
+        <span><KindIcon kind={entry.kind} size={24} /> {KIND_LABEL[entry.kind]}{entry.kind === 'meal' && entry.data.meal_type ? ` · ${entry.data.meal_type}` : ''}</span>
         <span className={entry.time_precision !== 'exact' ? 'rounded bg-amber-100 px-1 text-amber-800' : ''}>
           {timeLabel(entry.occurred_at, tz, entry.time_precision)}
         </span>

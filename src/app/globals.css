@@ -1,11 +1,97 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── gut-log 토큰 (명세 §2) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f3f8;
+  --card: #ffffff;
+  --ink: #26243a;
+  --mute: #6c6a80;
+  --accent: #6b5fc7;
+  --accent-soft: #e9e6f9;
+  --warn: #c85a4a;
+  --warn-soft: #f9e3df;
+  --line: #e3e1ee;
+  --radius: 0.75rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg: #171622; --card: #22212f; --ink: #ebe9f5; --mute: #9d9ab5;
+    --accent: #a89cf0; --accent-soft: #2e2a4a; --warn: #ee8a78; --warn-soft: #40241f; --line: #33314a;
+  }
+}
+:root.dark {
+  --bg: #171622; --card: #22212f; --ink: #ebe9f5; --mute: #9d9ab5;
+  --accent: #a89cf0; --accent-soft: #2e2a4a; --warn: #ee8a78; --warn-soft: #40241f; --line: #33314a;
+}
+
+/* ── shadcn 변수 → 토큰 매핑 ── */
+:root, :root.dark, :root:not(.light) {
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--accent-soft);
+  --secondary-foreground: var(--ink);
+  --muted: var(--line);
+  --muted-foreground: var(--mute);
+  --accent-shadcn: var(--accent-soft);
+  --destructive: var(--warn);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
 }
 
 @theme inline {
+  --font-sans: "Pretendard Variable", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-line: var(--line);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+@layer base {
+  * { @apply border-line; }
+  html { color-scheme: light dark; }
+  body { @apply bg-bg text-ink font-sans antialiased; font-size: 14px; }
 }
