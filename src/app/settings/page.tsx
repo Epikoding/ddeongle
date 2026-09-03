@@ -33,9 +33,10 @@ export default function SettingsPage() {
     catch (err) { setMsg(toMsg(err)) }
   }
   async function changeTz(v: string) {
-    setTz(v)
+    // 저장에 실패하면 화면의 선택값을 되돌린다 — 다른 화면은 여전히 옛 시간대를 쓴다.
+    const prev = tz; setTz(v)
     try { await updateTimezone(createClient(), userId, v) }
-    catch (err) { setMsg(toMsg(err)) }
+    catch (err) { setTz(prev); setMsg(toMsg(err)) }
   }
   async function signOut() { await createClient().auth.signOut(); window.location.href = '/login' }
 
