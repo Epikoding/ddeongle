@@ -80,7 +80,9 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
 
   return (
     <Sheet open onOpenChange={(o) => { if (!o) onClose() }}>
-      <SheetContent side="bottom" className="mx-auto flex max-h-[90dvh] max-w-md flex-col rounded-t-[22px] border-line bg-card p-0" data-testid="confirm-sheet">
+      <SheetContent side="bottom" aria-describedby={undefined}
+        onCloseAutoFocus={(e) => { e.preventDefault(); (document.querySelector('[data-testid="open-input"]') as HTMLElement | null)?.focus() }}
+        className="mx-auto flex max-h-[90dvh] max-w-md flex-col gap-0 rounded-t-[22px] border-line bg-card p-0" data-testid="confirm-sheet">
         <SheetHeader className="px-4 pt-3 pb-2"><SheetTitle className="text-[20px] font-bold">확인 후 저장</SheetTitle></SheetHeader>
         <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-2">
           {result.questions.length > 0 && (
@@ -108,13 +110,13 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
             </div>
           ))}
           {msg && <p role="alert" className="rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{msg}</p>}
-          {showRaw && <pre className="whitespace-pre-wrap rounded-xl bg-bg p-2 text-[12px] text-mute">{raw.text}</pre>}
         </div>
         <div className="border-t border-line bg-card px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button onClick={save} disabled={busy || entries.length - blocked === 0} className="h-12 w-full rounded-xl text-[16px] font-bold" data-testid="save-entries">
             저장 ({entries.length - blocked}건){blocked ? ` · ${blocked}건 보류` : ''}
           </Button>
           <button type="button" onClick={() => setShowRaw(!showRaw)} className="mt-2 w-full py-1 text-[14px] text-mute underline">원문 보기</button>
+          {showRaw && <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl bg-bg p-2 text-[12px] text-mute">{raw.text}</pre>}
         </div>
       </SheetContent>
     </Sheet>
