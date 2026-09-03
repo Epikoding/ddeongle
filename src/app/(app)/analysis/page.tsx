@@ -1,21 +1,26 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getProfile, suspectRanking, suspectDetail, type RankingRow, type DetailRow } from '@/lib/db'
-import { RankingTable, GRP_LABEL } from '@/components/RankingTable'
+import { RankingBars, rowKey } from '@/components/RankingTable'
+import { baselineOf } from '@/lib/baseline'
 import { toLocalDateStr, dayRange } from '@/lib/time'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { BarChart3 } from 'lucide-react'
 
 const TARGETS = [['diarrhea', '설사'], ['urgency', '급박 배변'], ['pain', '복통'], ['bloating', '팽만']] as const
 const WINDOWS = [2, 4, 8, 24] as const
+const DAYS = [14, 30, 60, 90] as const
 
 export default function AnalysisPage() {
   const [tz, setTz] = useState('Asia/Seoul')
-  const [days, setDays] = useState(30)
+  const [days, setDays] = useState<(typeof DAYS)[number]>(30)
   const [windowHours, setWindowHours] = useState<(typeof WINDOWS)[number]>(8)
   const [target, setTarget] = useState<(typeof TARGETS)[number][0]>('diarrhea')
   const [rows, setRows] = useState<RankingRow[]>([])
-  const [picked, setPicked] = useState<RankingRow | null>(null)
+  const [pickedKey, setPickedKey] = useState<string | null>(null)
   const [detail, setDetail] = useState<DetailRow[]>([])
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -36,14 +41,16 @@ export default function AnalysisPage() {
     let alive = true
     tokenRef.current += 1 // 이전 조건으로 날아간 상세 응답이 새 순위표에 얹히지 않게 무효화
     suspectRanking(sb, { ...range(), windowHours, target })
-      .then((rs) => { if (alive) { setRows(rs); setPicked(null); setLoadError(null) } })
-      .catch(() => { if (alive) { setRows([]); setPicked(null); setLoadError('순위표를 불러오지 못했습니다.') } })
+      .then((rs) => { if (alive) { setRows(rs); setPickedKey(null); setLoadError(null) } })
+      .catch(() => { if (alive) { setRows([]); setPickedKey(null); setLoadError('순위표를 불러오지 못했습니다.') } })
       .finally(() => { if (alive) setLoadedKey(loadKey) })
     return () => { alive = false }
   }, [tz, days, windowHours, target]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function pick(r: RankingRow) {
-    setPicked(r); setDetail([]); setDetailError(null)
+    const key = rowKey(r)
+    if (pickedKey === key) { setPickedKey(null); return }
+    setPickedKey(key); setDetail([]); setDetailError(null)
     const t = ++tokenRef.current
     try {
       const d = await suspectDetail(createClient(), { ...range(), windowHours, target, grp: r.grp, candidate: r.candidate })
@@ -52,44 +59,45 @@ export default function AnalysisPage() {
       if (t === tokenRef.current) setDetailError('상세를 불러오지 못했습니다.')
     }
   }
-  const fmt = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
+
+  const targetLabel = TARGETS.find(([v]) => v === target)![1]
+  const mealBase = rows.find((r) => ['ingredient', 'food', 'pattern'].includes(r.grp))
+  const basePct = mealBase ? baselineOf(mealBase) : null
+  const allShort = rows.length > 0 && rows.every((r) => !r.enough)
+  const pill = 'h-8 rounded-full border-line bg-card px-3 text-[12px] text-mute'
 
   return (
-    <main className="mx-auto max-w-md p-4">
-      <Link href="/" className="text-sm text-neutral-600">← 타임라인</Link>
-      <h1 className="my-2 text-lg font-bold">용의자 순위표</h1>
-      <div className="mb-2 flex flex-wrap gap-2 text-sm">
-        <select value={target} onChange={(e) => setTarget(e.target.value as typeof target)} className="rounded border p-1">
-          {TARGETS.map(([v, l]) => <option key={v} value={v}>표적: {l}</option>)}
-        </select>
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="rounded border p-1">
-          {[14, 30, 60, 90].map((d) => <option key={d} value={d}>최근 {d}일</option>)}
-        </select>
+    <main>
+      <PageHeader title="용의자 순위" subtitle={`${targetLabel} · 최근 ${days}일 · ${windowHours}시간 창`} />
+      <div className="flex gap-1.5 px-4 pb-3">
+        <Select value={target} onValueChange={(v) => setTarget(v as typeof target)}>
+          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectContent className="shadow-none">{TARGETS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={String(days)} onValueChange={(v) => setDays(Number(v) as typeof days)}>
+          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectContent className="shadow-none">{DAYS.map((d) => <SelectItem key={d} value={String(d)}>최근 {d}일</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={String(windowHours)} onValueChange={(v) => setWindowHours(Number(v) as typeof windowHours)}>
+          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectContent className="shadow-none">{WINDOWS.map((w) => <SelectItem key={w} value={String(w)}>{w}시간 창</SelectItem>)}</SelectContent>
+        </Select>
       </div>
-      <div className="mb-3 flex gap-1">
-        {WINDOWS.map((w) => (
-          <button key={w} onClick={() => setWindowHours(w)} className={`flex-1 rounded-lg border p-1 text-sm ${w === windowHours ? 'bg-black text-white' : ''}`}>{w}h</button>
-        ))}
+
+      <div className="px-4">
+        {loading ? <p className="py-8 text-center text-[12px] text-mute">계산 중…</p> :
+          loadError ? <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{loadError}</p> :
+          rows.length === 0 ? <EmptyState icon={BarChart3} title="기간 안에 기록이 없어요" hint="기록이 쌓이면 여기에 순위가 나옵니다" /> : (
+          <>
+            <p className="mb-1 flex items-center gap-3 text-[12px] text-mute">
+              <span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-warn align-middle" />먹은 뒤 {targetLabel} 비율</span>
+              {basePct != null && <span><i className="mr-1 inline-block h-2.5 w-0.5 bg-ink align-middle" />평소 비율 {Math.round(basePct * 100)}%</span>}
+            </p>
+            {allShort && <p className="mb-2 rounded-xl bg-accent-soft p-2.5 text-[12px] text-ink">노출이 3번 이상 쌓이면 배수가 나옵니다.</p>}
+            <RankingBars rows={rows} pickedKey={pickedKey} onPick={pick} detail={detail} detailError={detailError} tz={tz} />
+          </>)}
+        <p className="mt-4 text-[12px] text-mute">연관은 가설입니다. 확인은 한 가지씩 3일 재도입으로.</p>
       </div>
-      <p className="mb-2 text-xs text-neutral-500">연관은 가설입니다. 확인은 한 가지씩 3일 재도입으로.</p>
-      {loading ? <p className="text-neutral-500">계산 중…</p> :
-        loadError ? <p role="alert" className="text-red-600">{loadError}</p> :
-        rows.length === 0 ? <p className="text-neutral-500">기간 안에 기록이 없습니다.</p> :
-        <RankingTable rows={rows} onPick={pick} />}
-      {picked && !loading && (
-        <section className="mt-4 rounded-xl border bg-white p-3 text-sm">
-          <h2 className="font-semibold">{GRP_LABEL[picked.grp]} · {picked.candidate}</h2>
-          {detailError && <p role="alert" className="mt-2 text-red-600">{detailError}</p>}
-          <ul className="mt-2 space-y-1">
-            {detail.map((d) => (
-              <li key={d.exposure_id} className="flex justify-between">
-                <span>{fmt(d.exposure_at)}</span>
-                <span className={d.hit ? 'text-red-700' : 'text-neutral-400'}>{d.hit && d.target_at ? `→ ${fmt(d.target_at)} 발생` : '없음'}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </main>
   )
 }
