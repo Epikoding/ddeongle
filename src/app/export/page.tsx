@@ -29,13 +29,13 @@ export default function ExportPage() {
     try {
       const rows = await exportRows(createClient(), dayRange(from, tz).from, dayRange(to, tz).to)
       const blob = new Blob(['\uFEFF' + entriesToCsv(rows, tz)], { type: 'text/csv;charset=utf-8' })
-      // \uC575\uCEE4\uB97C \uBB38\uC11C\uC5D0 \uBD99\uC5EC\uC57C WebKit(iOS Safari)\uC5D0\uC11C \uD074\uB9AD\uC774 \uBA39\uACE0, revoke\uB294 \uB2E4\uC6B4\uB85C\uB4DC\uAC00 \uC2DC\uC791\uB41C \uB4A4\uC5D0 \uD55C\uB2E4.
+      // 앵커를 문서에 붙여야 WebKit(iOS Safari)에서 클릭이 먹고, revoke는 다운로드가 시작된 뒤에 한다.
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = `gut-log_${from}_${to}.csv`
       document.body.appendChild(a); a.click(); a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (err) {
-      setMsg('\uB0B4\uBCF4\uB0B4\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. ' + (err instanceof Error ? err.message : String(err)))
+      setMsg('내보내지 못했습니다. ' + (err instanceof Error ? err.message : String(err)))
     }
   }
 
