@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { loadQueue, enqueue, dequeue } from '@/lib/queue'
+import { loadQueue, enqueue, dequeue, subscribeQueue } from '@/lib/queue'
 
 function memStorage(): Storage {
   const m = new Map<string, string>()
@@ -29,6 +29,18 @@ describe('queue', () => {
     const s = memStorage()
     s.setItem = () => { throw new Error('QuotaExceededError') }
     expect(enqueue({ raw: null, entries: [] }, s)).toBeNull()
+  })
+  it('넣고 뺄 때 구독자에게 알린다', () => {
+    const s = memStorage()
+    let calls = 0
+    const unsubscribe = subscribeQueue(() => { calls += 1 })
+    const item = enqueue({ raw: null, entries: [] }, s)
+    expect(calls).toBe(1)
+    dequeue(item!.id, s)
+    expect(calls).toBe(2)
+    unsubscribe()
+    enqueue({ raw: null, entries: [] }, s)
+    expect(calls).toBe(2)
   })
   it('randomUUID가 없어도 id를 만든다', () => {
     const s = memStorage()

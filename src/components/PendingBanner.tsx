@@ -2,22 +2,23 @@
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { saveEntries } from '@/lib/db'
-import { loadQueue, dequeue, type PendingItem } from '@/lib/queue'
+import { loadQueue, dequeue, subscribeQueue, QUEUE_KEY, type PendingItem } from '@/lib/queue'
 
 // localStorage는 React 밖의 저장소라 useSyncExternalStore로 읽는다.
 // (useEffect 안에서 setState 하면 react-hooks/set-state-in-effect 규칙에 걸린다)
 const EMPTY: PendingItem[] = []
 let cache: PendingItem[] = EMPTY
-const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void) {
   cache = loadQueue() // 붙을 때마다 큐를 다시 읽는다
-  listeners.add(listener)
-  return () => { listeners.delete(listener) }
+  const onChange = () => { cache = loadQueue(); listener() }
+  const unsubscribe = subscribeQueue(onChange)          // 같은 탭의 enqueue·dequeue
+  const onStorage = (e: StorageEvent) => { if (!e.key || e.key === QUEUE_KEY) onChange() } // 다른 탭
+  window.addEventListener('storage', onStorage)
+  return () => { unsubscribe(); window.removeEventListener('storage', onStorage) }
 }
 function getSnapshot(): PendingItem[] { return cache }
 function getServerSnapshot(): PendingItem[] { return EMPTY }
-function refresh() { cache = loadQueue(); listeners.forEach((l) => l()) }
 
 export function PendingBanner({ onFlushed }: { onFlushed: () => void }) {
   const items = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
@@ -30,7 +31,7 @@ export function PendingBanner({ onFlushed }: { onFlushed: () => void }) {
     for (const it of items) {
       try { await saveEntries(sb, it.raw, it.entries); dequeue(it.id) } catch { /* 다음 기회 */ }
     }
-    refresh(); setBusy(false); onFlushed()
+    setBusy(false); onFlushed() // 목록 갱신은 dequeue가 알린다
   }
 
   return (

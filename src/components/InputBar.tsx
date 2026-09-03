@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { buildPrompt, type FoodHint } from '@/lib/prompt'
 import { parsePaste, type PasteResult } from '@/lib/parse-paste'
 import type { RawInput } from '@/lib/db'
+import { newId } from '@/lib/queue'
 
 export function InputBar({ tz, foods, onParsed }:
   { tz: string; foods: FoodHint[]; onParsed: (result: Extract<PasteResult, { ok: true }>, raw: RawInput) => void }) {
@@ -26,7 +27,8 @@ export function InputBar({ tz, foods, onParsed }:
     const r = parsePaste(paste)
     if (!r.ok) { setError(r.message); return }
     setError(null)
-    onParsed(r, { text, source: 'voice', reference_at: (referenceAt ?? new Date()).toISOString(), pasted_json: JSON.parse(paste.slice(paste.indexOf('{'), paste.lastIndexOf('}') + 1)) })
+    // client_id는 이 회차의 이름표 — 큐에 보관됐다가 다시 보내도 같은 값이라 서버가 두 번 받지 않는다
+    onParsed(r, { text, source: 'voice', reference_at: (referenceAt ?? new Date()).toISOString(), pasted_json: JSON.parse(paste.slice(paste.indexOf('{'), paste.lastIndexOf('}') + 1)), client_id: newId() })
     setPaste('')
   }
 
