@@ -1,5 +1,5 @@
 const CACHE = 'gutlog-shell-v2'
-const SHELL = ['/', '/login', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/fonts/PretendardVariable.woff2']
+const SHELL = ['/', '/login', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()))

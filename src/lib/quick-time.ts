@@ -13,16 +13,19 @@ export function isoToLocalInput(iso: string, tz: string): string {
   return p.replace(' ', 'T')
 }
 
-export function quickTimeIso(preset: QuickPreset, now: Date, tz: string): { iso: string; precision: 'exact' | 'approx' } {
-  if (preset === 'now') return { iso: now.toISOString(), precision: 'exact' }
-  return { iso: localToIso(`${toLocalDateStr(now, tz)}T${FIXED[preset]}`, tz, now), precision: 'approx' }
+/** 고정 프리셋(아침·점심·저녁)은 `sample`이 놓인 **그 날**의 시각을 돌려준다 — 어제 항목에서 '아침'을 눌러도
+ *  날짜가 오늘로 튀지 않는다. `'now'`는 `sample` 자체를 돌려주므로 실제 현재 시각은 호출부가 넣는다. */
+export function quickTimeIso(preset: QuickPreset, sample: Date, tz: string): { iso: string; precision: 'exact' | 'approx' } {
+  if (preset === 'now') return { iso: sample.toISOString(), precision: 'exact' }
+  return { iso: localToIso(`${toLocalDateStr(sample, tz)}T${FIXED[preset]}`, tz, sample), precision: 'approx' }
 }
 
+/** `now`는 '지금'인지 가리는 데만 쓴다 — 고정 프리셋은 그 항목(`iso`) 자신의 날짜를 기준으로 비교한다. */
 export function presetOf(iso: string, now: Date, tz: string): QuickPreset | 'custom' {
-  const t = new Date(iso).getTime()
-  if (Math.abs(t - now.getTime()) <= 60_000) return 'now'
+  const at = new Date(iso)
+  if (Math.abs(at.getTime() - now.getTime()) <= 60_000) return 'now'
   for (const p of ['morning', 'lunch', 'evening'] as const) {
-    if (quickTimeIso(p, now, tz).iso === new Date(iso).toISOString()) return p
+    if (quickTimeIso(p, at, tz).iso === at.toISOString()) return p
   }
   return 'custom'
 }

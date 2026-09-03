@@ -14,6 +14,13 @@ describe('quickTimeIso', () => {
   it('UTC 시간대', () => {
     expect(quickTimeIso('lunch', now, 'UTC').iso).toBe('2026-09-03T12:30:00.000Z')
   })
+  it('어제 항목에서 아침을 눌러도 날짜가 어제로 남는다', () => {
+    // 오늘이 9월 3일이어도, 고정 프리셋의 기준은 그 항목의 날짜(9월 2일 19:45 KST)다
+    const entry = new Date('2026-09-02T10:45:00Z')
+    expect(quickTimeIso('morning', entry, 'Asia/Seoul')).toEqual({ iso: '2026-09-01T23:00:00.000Z', precision: 'approx' })
+    expect(isoToLocalInput('2026-09-01T23:00:00.000Z', 'Asia/Seoul')).toBe('2026-09-02T08:00')
+    expect(presetOf('2026-09-01T23:00:00.000Z', now, 'Asia/Seoul')).toBe('morning')
+  })
 })
 describe('presetOf', () => {
   it('역매핑', () => {

@@ -3,6 +3,7 @@
 
 @source not "../../docs";
 
+/* shadcn의 `dark:` 유틸리티는 `.dark` 클래스가 붙은 조상 아래에서만 발화한다 — 앱은 그 클래스를 붙이지 않고 토큰 변수만 두 경로(prefers-color-scheme, :root.dark)로 바꾼다. 수동 토글을 들이면 shadcn 입력 배경 같은 `dark:` 전용 값들을 다시 살펴야 한다. */
 @custom-variant dark (&:is(.dark *));
 
 @font-face {
@@ -20,10 +21,10 @@
   --ink: #26243a;
   --mute: #6c6a80;
   --accent: #6b5fc7;
-  --accent-soft: #e9e6f9;
-  --warn: #c85a4a;
+  --accent-soft: #f1effb;
+  --warn: #b14536;
   --warn-soft: #f9e3df;
-  --line: #e3e1ee;
+  --line: #eeedf5;
   --radius: 0.75rem;
   /* 기본 버튼 글자색 — 다크 블록이 덮도록 :root에 둔다(공용 매핑 블록은 다크보다 뒤라 덮인다) */
   --primary-foreground: #ffffff;
@@ -108,3 +109,13 @@
 .gl-dot-entry::after { background: var(--accent); }
 .gl-dot-target::after { background: var(--warn); }
 .gl-dot-entry[data-selected="true"]::after, .gl-dot-target[data-selected="true"]::after { background: var(--primary-foreground); }
+
+/* ── 움직임 줄이기 선호 ── */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

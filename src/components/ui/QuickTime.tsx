@@ -19,7 +19,7 @@ export function QuickTime({ iso, precision, tz, onChange }:
   return (
     <div className="flex flex-wrap gap-1.5">
       {(Object.keys(QUICK_LABEL) as QuickPreset[]).map((p) => (
-        <Chip key={p} selected={current === p} onClick={() => { const r = quickTimeIso(p, new Date(), tz); onChange(r.iso, r.precision) }}>{QUICK_LABEL[p]}</Chip>
+        <Chip key={p} selected={current === p} onClick={() => { const r = quickTimeIso(p, p === 'now' ? new Date() : new Date(iso), tz); onChange(r.iso, r.precision) }}>{QUICK_LABEL[p]}</Chip>
       ))}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -27,10 +27,10 @@ export function QuickTime({ iso, precision, tz, onChange }:
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3 shadow-none ring-0">
           <label className="block text-[12px] text-mute">날짜
-            <input type="date" value={date} onChange={(e) => { if (e.target.value) onChange(localToIso(`${e.target.value}T${time}`, tz, new Date(iso)), precision) }} className="mt-1 block rounded-xl border border-line bg-card p-2 text-ink" />
+            <input type="date" value={date} onChange={(e) => { if (e.target.value) onChange(localToIso(`${e.target.value}T${time}`, tz, new Date(iso)), precision) }} className="mt-1 block rounded-xl border border-line bg-card p-2 text-[16px] text-ink" />
           </label>
           <label className="block text-[12px] text-mute">시각
-            <input type="time" value={time} data-testid="edit-time" onChange={(e) => { if (e.target.value) onChange(localToIso(`${date}T${e.target.value}`, tz, new Date(iso)), 'exact') }} className="mt-1 block rounded-xl border border-line bg-card p-2 text-ink" />
+            <input type="time" value={time} data-testid="edit-time" onChange={(e) => { if (e.target.value) onChange(localToIso(`${date}T${e.target.value}`, tz, new Date(iso)), 'exact') }} className="mt-1 block rounded-xl border border-line bg-card p-2 text-[16px] text-ink" />
           </label>
         </PopoverContent>
       </Popover>
