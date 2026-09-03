@@ -6,6 +6,8 @@ import { enqueue, dequeue, newId, type PendingItem } from '@/lib/queue'
 import { isFuture } from '@/lib/time'
 import type { PasteResult } from '@/lib/parse-paste'
 import { entrySchema, type Entry } from '@/lib/schemas'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 import { EntryCard } from './EntryCard'
 import { EntryEditor } from './EntryForm'
 
@@ -77,24 +79,24 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
   }
 
   return (
-    <div className="fixed inset-0 z-20 flex items-end bg-black/40" onClick={onClose}>
-      <div className="mx-auto max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4" onClick={(e) => e.stopPropagation()} data-testid="confirm-sheet">
-        <h2 className="mb-2 text-lg font-bold">확인 후 저장</h2>
-        {result.questions.length > 0 && (
-          <div className="mb-2 rounded-lg border border-amber-500 bg-amber-50 p-2 text-sm">{result.questions.map((q) => <div key={q}>{q}</div>)}</div>
-        )}
-        {result.invalid.length > 0 && (
-          <div className="mb-2 rounded-lg border border-red-500 bg-red-50 p-2 text-sm">
-            항목 {result.invalid.length}개는 모양이 틀려 뺐습니다: {result.invalid.map((i) => i.reason).join(' / ')}
-          </div>
-        )}
-        <div className="space-y-2">
+    <Sheet open onOpenChange={(o) => { if (!o) onClose() }}>
+      <SheetContent side="bottom" className="mx-auto flex max-h-[90dvh] max-w-md flex-col rounded-t-[22px] border-line bg-card p-0" data-testid="confirm-sheet">
+        <SheetHeader className="px-4 pt-3 pb-2"><SheetTitle className="text-[20px] font-bold">확인 후 저장</SheetTitle></SheetHeader>
+        <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-2">
+          {result.questions.length > 0 && (
+            <div className="rounded-xl bg-accent-soft p-3 text-[14px] text-ink">{result.questions.map((q) => <div key={q}>{q}</div>)}</div>
+          )}
+          {result.invalid.length > 0 && (
+            <div className="rounded-xl bg-warn-soft p-3 text-[14px] text-warn">
+              항목 {result.invalid.length}개는 모양이 틀려 뺐습니다: {result.invalid.map((i) => i.reason).join(' / ')}
+            </div>
+          )}
           {entries.map((e, i) => (
             <div key={i}>
               <EntryCard entry={e} tz={tz} onClick={() => setEditing(editing === i ? null : i)}
                 tone={e.time_precision === 'unknown' || problems[i] !== undefined ? 'error' : e.time_precision === 'approx' || isFuture(e.occurred_at, reference) ? 'warn' : 'normal'} />
-              {problems[i] !== undefined && <p role="alert" className="text-xs text-red-700">모양이 틀려 저장하지 않았습니다: {problems[i]}</p>}
-              {isFuture(e.occurred_at, reference) && <p className="text-xs text-amber-700">기준 시각보다 뒤의 시각입니다.</p>}
+              {problems[i] !== undefined && <p role="alert" className="mt-1 text-[12px] text-warn">모양이 틀려 저장하지 않았습니다: {problems[i]}</p>}
+              {isFuture(e.occurred_at, reference) && <p className="mt-1 text-[12px] text-warn">기준 시각보다 뒤의 시각입니다.</p>}
               {editing === i && (
                 <EntryEditor value={e} tz={tz}
                   onChange={(v) => {
@@ -105,15 +107,16 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
               )}
             </div>
           ))}
+          {msg && <p role="alert" className="rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{msg}</p>}
+          {showRaw && <pre className="whitespace-pre-wrap rounded-xl bg-bg p-2 text-[12px] text-mute">{raw.text}</pre>}
         </div>
-        {msg && <p role="alert" className="mt-2 rounded-lg bg-amber-50 p-2 text-sm">{msg}</p>}
-        <button onClick={save} disabled={busy || entries.length - blocked === 0}
-          className="mt-3 w-full rounded-xl bg-black p-3 font-semibold text-white disabled:opacity-40" data-testid="save-entries">
-          저장 ({entries.length - blocked}건){blocked ? ` · ${blocked}건 보류` : ''}
-        </button>
-        <button onClick={() => setShowRaw(!showRaw)} className="mt-2 w-full rounded-xl border p-2 text-sm">원문 보기</button>
-        {showRaw && <pre className="mt-2 whitespace-pre-wrap rounded bg-neutral-100 p-2 text-xs">{raw.text}</pre>}
-      </div>
-    </div>
+        <div className="border-t border-line bg-card px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button onClick={save} disabled={busy || entries.length - blocked === 0} className="h-12 w-full rounded-xl text-[16px] font-bold" data-testid="save-entries">
+            저장 ({entries.length - blocked}건){blocked ? ` · ${blocked}건 보류` : ''}
+          </Button>
+          <button type="button" onClick={() => setShowRaw(!showRaw)} className="mt-2 w-full py-1 text-[14px] text-mute underline">원문 보기</button>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

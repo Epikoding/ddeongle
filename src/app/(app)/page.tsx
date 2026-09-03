@@ -4,10 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Mic } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, listEntriesForDay, type EntryRow } from '@/lib/db'
+import { getProfile, listEntriesForDay, listFoods, type EntryRow, type RawInput } from '@/lib/db'
+import type { PasteResult } from '@/lib/parse-paste'
+import type { FoodHint } from '@/lib/prompt'
 import { toLocalDateStr } from '@/lib/time'
 import { EntryCard } from '@/components/EntryCard'
 import { InputBar } from '@/components/InputBar'
+import { InputSheet } from '@/components/InputSheet'
+import { ConfirmSheet } from '@/components/ConfirmSheet'
 import { DayPicker } from '@/components/DayPicker'
 import { PendingBanner } from '@/components/PendingBanner'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -29,6 +33,10 @@ export default function HomePage() {
   const [reloadKey, setReloadKey] = useState(0)
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [foods, setFoods] = useState<FoodHint[]>([])
+  const [sheet, setSheet] = useState<{ result: Extract<PasteResult, { ok: true }>; raw: RawInput } | null>(null)
+  const [inputOpen, setInputOpen] = useState(false)
+  const [inputKey, setInputKey] = useState(0)
   const loading = !date || loadedKey !== `${date}|${tz}|${reloadKey}`
 
   useEffect(() => {
@@ -36,6 +44,7 @@ export default function HomePage() {
     getProfile(sb)
       .then((p) => { setTz(p.timezone); setDate(toLocalDateStr(new Date(), p.timezone)) })
       .catch(() => { setTz('Asia/Seoul'); setDate(toLocalDateStr(new Date(), 'Asia/Seoul')) })
+    listFoods(sb).then(setFoods).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -81,8 +90,16 @@ export default function HomePage() {
           entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`} className="block"><EntryCard entry={e} tz={tz} /></Link>)}
       </section>
 
-      <InputBar onOpenInput={() => {}} onOpenForm={() => router.push('/entries/new')} />
-      {/* Task 6에서 <InputSheet>와 <ConfirmSheet>를 여기에 붙인다. inputOpen·sheet·foods·inputKey·setSheet는 그때 쓴다. */}
+      <InputBar onOpenInput={() => setInputOpen(true)} onOpenForm={() => router.push('/entries/new')} />
+      <InputSheet key={inputKey} open={inputOpen} onOpenChange={setInputOpen} tz={tz} foods={foods}
+        onParsed={(result, raw) => setSheet({ result, raw })} />
+      {sheet && <ConfirmSheet result={sheet.result} raw={sheet.raw} tz={tz}
+        onSaved={(remaining) => {
+          setReloadKey((k) => k + 1)
+          listFoods(createClient()).then(setFoods).catch(() => {})
+          if (remaining === 0) { setSheet(null); setInputKey((k) => k + 1) }
+        }}
+        onClose={() => setSheet(null)} />}
     </main>
   )
 }
