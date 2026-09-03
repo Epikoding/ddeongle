@@ -7,10 +7,17 @@ export function toLocalInput(iso: string, tz: string): string {
   const p = new Intl.DateTimeFormat('sv-SE', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
   return p.replace(' ', 'T')
 }
+function offsetAt(d: Date, tz: string): string {
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(d).find((x) => x.type === 'timeZoneName')!.value
+  return name === 'GMT' ? '+00:00' : name.replace('GMT', '')
+}
+/** 지역 시각 칸(v) → UTC ISO. 기준 시각의 오프셋으로 한 번 찍고, 그 결과 날짜의 실제 오프셋으로 한 번 다시 잡는다
+ *  (서머타임 전환을 건너뛰면 기준 시각의 오프셋이 더 이상 맞지 않는다 — lib/time.ts의 localMidnight과 같은 방식) */
 export function fromLocalInput(v: string, tz: string, sampleIso: string): string {
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(new Date(sampleIso)).find((x) => x.type === 'timeZoneName')!.value
-  const off = name === 'GMT' ? '+00:00' : name.replace('GMT', '')
-  return new Date(`${v}:00${off}`).toISOString()
+  const sample = offsetAt(new Date(sampleIso), tz)
+  const guess = new Date(`${v}:00${sample}`)
+  const actual = offsetAt(guess, tz)
+  return (actual === sample ? guess : new Date(`${v}:00${actual}`)).toISOString()
 }
 
 export function blankEntry(kind: Kind, nowIso: string): Entry {

@@ -28,7 +28,7 @@ export default function HomePage() {
     getProfile(sb)
       .then((p) => { setTz(p.timezone); setDate(toLocalDateStr(new Date(), p.timezone)) })
       .catch(() => { setTz('Asia/Seoul'); setDate(toLocalDateStr(new Date(), 'Asia/Seoul')) })
-    listFoods(sb).then(setFoods)
+    listFoods(sb).then(setFoods).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function HomePage() {
   }, [date, tz, reloadKey])
 
   function shift(days: number) {
+    if (!date) return // 날짜를 아직 못 정했으면(프로필 로딩 전) 움직이지 않는다
     const d = new Date(`${date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days)
     setDate(d.toISOString().slice(0, 10))
   }
@@ -50,9 +51,9 @@ export default function HomePage() {
   return (
     <main className="mx-auto max-w-md p-4 pb-40">
       <header className="mb-3 flex items-center justify-between">
-        <button onClick={() => shift(-1)} className="p-2">◀</button>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded border p-1" />
-        <button onClick={() => shift(1)} className="p-2">▶</button>
+        <button onClick={() => shift(-1)} disabled={!date} className="p-2 disabled:opacity-40">◀</button>
+        <input type="date" value={date} onChange={(e) => { if (e.target.value) setDate(e.target.value) }} className="rounded border p-1" />
+        <button onClick={() => shift(1)} disabled={!date} className="p-2 disabled:opacity-40">▶</button>
       </header>
       <nav className="mb-3 flex gap-3 text-sm text-neutral-600">
         <Link href="/analysis">분석</Link><Link href="/export">내보내기</Link><Link href="/settings">설정</Link>
@@ -66,7 +67,12 @@ export default function HomePage() {
         </div>}
       <InputBar key={inputKey} tz={tz} foods={foods} onParsed={(result, raw) => setSheet({ result, raw })} />
       {sheet && <ConfirmSheet result={sheet.result} raw={sheet.raw} tz={tz}
-        onSaved={() => { setSheet(null); setReloadKey((k) => k + 1); setInputKey((k) => k + 1); listFoods(createClient()).then(setFoods) }}
+        onSaved={(remaining) => {
+          setReloadKey((k) => k + 1)
+          listFoods(createClient()).then(setFoods).catch(() => {})
+          // 남은 항목(시각 미정·모양 오류)이 있으면 시트를 열어 둔다 — 고치기 전까지 사라지면 안 된다
+          if (remaining === 0) { setSheet(null); setInputKey((k) => k + 1) }
+        }}
         onClose={() => setSheet(null)} />}
     </main>
   )

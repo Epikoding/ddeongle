@@ -19,6 +19,11 @@ describe('시각 칸 변환', () => {
     const iso = fromLocalInput('2026-01-15T07:30', 'Asia/Seoul', '2026-01-15T00:00:00+09:00')
     expect(toLocalInput(iso, 'Asia/Seoul')).toBe('2026-01-15T07:30')
   })
+  it('서머타임을 건너뛰면 그 날의 오프셋으로 다시 잡는다', () => {
+    // 기준 시각은 PST(-08:00), 고른 시각은 전환 뒤라 PDT(-07:00)
+    expect(fromLocalInput('2026-03-09T12:00', 'America/Los_Angeles', '2026-03-07T20:00:00Z'))
+      .toBe('2026-03-09T19:00:00.000Z')
+  })
 })
 
 describe('blankEntry', () => {
