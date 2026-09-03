@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@source not "../../docs";
+
 @custom-variant dark (&:is(.dark *));
 
 @font-face {
@@ -23,16 +25,20 @@
   --warn-soft: #f9e3df;
   --line: #e3e1ee;
   --radius: 0.75rem;
+  /* 기본 버튼 글자색 — 다크 블록이 덮도록 :root에 둔다(공용 매핑 블록은 다크보다 뒤라 덮인다) */
+  --primary-foreground: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
     --bg: #171622; --card: #22212f; --ink: #ebe9f5; --mute: #9d9ab5;
     --accent: #a89cf0; --accent-soft: #2e2a4a; --warn: #ee8a78; --warn-soft: #40241f; --line: #33314a;
+    --primary-foreground: #171622;
   }
 }
 :root.dark {
   --bg: #171622; --card: #22212f; --ink: #ebe9f5; --mute: #9d9ab5;
   --accent: #a89cf0; --accent-soft: #2e2a4a; --warn: #ee8a78; --warn-soft: #40241f; --line: #33314a;
+  --primary-foreground: #171622;
 }
 
 /* ── shadcn 변수 → 토큰 매핑 ── */
@@ -43,7 +49,6 @@
   --popover: var(--card);
   --popover-foreground: var(--ink);
   --primary: var(--accent);
-  --primary-foreground: #ffffff;
   --secondary: var(--accent-soft);
   --secondary-foreground: var(--ink);
   --muted: var(--line);
@@ -87,7 +92,6 @@
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
 }
 
 @layer base {
