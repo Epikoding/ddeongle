@@ -19,11 +19,14 @@ export default function HomePage() {
   const [sheet, setSheet] = useState<{ result: Extract<PasteResult, { ok: true }>; raw: RawInput } | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const loading = !date || loadedKey !== `${date}|${tz}|${reloadKey}`
 
   useEffect(() => {
     const sb = createClient()
-    getProfile(sb).then((p) => { setTz(p.timezone); setDate(toLocalDateStr(new Date(), p.timezone)) })
+    getProfile(sb)
+      .then((p) => { setTz(p.timezone); setDate(toLocalDateStr(new Date(), p.timezone)) })
+      .catch(() => { setTz('Asia/Seoul'); setDate(toLocalDateStr(new Date(), 'Asia/Seoul')) })
     listFoods(sb).then(setFoods)
   }, [])
 
@@ -32,7 +35,8 @@ export default function HomePage() {
     const sb = createClient()
     let alive = true
     listEntriesForDay(sb, date, tz)
-      .then((rows) => { if (alive) setEntries(rows) })
+      .then((rows) => { if (alive) { setEntries(rows); setLoadError(null) } })
+      .catch(() => { if (alive) { setEntries([]); setLoadError('기록을 불러오지 못했습니다.') } })
       .finally(() => { if (alive) setLoadedKey(`${date}|${tz}|${reloadKey}`) })
     return () => { alive = false }
   }, [date, tz, reloadKey])
@@ -54,6 +58,7 @@ export default function HomePage() {
       </nav>
       <PendingBanner onFlushed={() => setReloadKey((k) => k + 1)} />
       {loading ? <p className="text-neutral-500">불러오는 중…</p> :
+        loadError ? <p role="alert" className="text-red-600">{loadError}</p> :
         entries.length === 0 ? <p className="text-neutral-500">이 날 기록이 없습니다.</p> :
         <div className="space-y-2">
           {entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`}><EntryCard entry={e} tz={tz} /></Link>)}

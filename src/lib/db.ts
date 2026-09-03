@@ -17,8 +17,10 @@ function must<T>(r: { data: T | null; error: { message: string } | null }): T {
 }
 
 export async function getProfile(sb: SupabaseClient) {
-  return must(await sb.from('profiles').select('user_id, display_name, timezone').single()) as
-    { user_id: string; display_name: string | null; timezone: string }
+  const row = must(await sb.from('profiles').select('user_id, display_name, timezone').maybeSingle()) as
+    { user_id: string; display_name: string | null; timezone: string } | null
+  if (!row) throw new Error('profile_missing')
+  return row
 }
 
 export async function listEntriesForDay(sb: SupabaseClient, dateStr: string, tz: string): Promise<EntryRow[]> {
@@ -38,7 +40,8 @@ export async function getEntry(sb: SupabaseClient, id: string): Promise<EntryRow
 
 export async function updateEntry(sb: SupabaseClient, id: string,
   patch: { occurred_at?: string; time_precision?: Entry['time_precision']; data?: Entry['data'] }) {
-  must(await sb.from('entries').update(patch).eq('id', id).select('id'))
+  const rows = must(await sb.from('entries').update(patch).eq('id', id).select('id')) as { id: string }[]
+  if (rows.length === 0) throw new Error('not_found')
   if (patch.data && 'foods' in patch.data) {
     const tags = patch.data.foods.flatMap((f) => f.ingredients)
     must(await sb.from('entry_tags').delete().eq('entry_id', id))
@@ -47,7 +50,8 @@ export async function updateEntry(sb: SupabaseClient, id: string,
 }
 
 export async function deleteEntry(sb: SupabaseClient, id: string) {
-  must(await sb.from('entries').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id'))
+  const rows = must(await sb.from('entries').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id')) as { id: string }[]
+  if (rows.length === 0) throw new Error('not_found')
 }
 
 export async function getRawInput(sb: SupabaseClient, id: string) {
@@ -83,7 +87,8 @@ export async function addInvite(sb: SupabaseClient, email: string, invitedBy: st
 }
 
 export async function updateTimezone(sb: SupabaseClient, userId: string, tz: string) {
-  must(await sb.from('profiles').update({ timezone: tz }).eq('user_id', userId).select('user_id'))
+  const rows = must(await sb.from('profiles').update({ timezone: tz }).eq('user_id', userId).select('user_id')) as { user_id: string }[]
+  if (rows.length === 0) throw new Error('not_found')
 }
 
 export async function exportRows(sb: SupabaseClient, from: string, to: string): Promise<EntryRow[]> {
