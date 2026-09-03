@@ -83,7 +83,7 @@ export const entrySchema = z.discriminatedUnion('kind', [
 export type Entry = z.infer<typeof entrySchema>
 
 export const parsedResultSchema = z.object({
-  entries: z.array(z.unknown()).default([]),
+  entries: z.array(z.unknown()),
   questions: z.array(z.string()).default([]),
 })
 export type ParsedResult = { entries: Entry[]; questions: string[] }

@@ -60,4 +60,9 @@ describe('parsePaste', () => {
     const r = parsePaste(JSON.stringify({ ...good, questions: ['떡볶이는 언제였나요?'] }))
     if (r.ok) expect(r.questions).toEqual(['떡볶이는 언제였나요?'])
   })
+  it('entries 키 자체가 없으면 bad_shape', () => {
+    const r = parsePaste('{"a":1}')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error).toBe('bad_shape')
+  })
 })

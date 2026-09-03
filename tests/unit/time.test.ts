@@ -16,4 +16,13 @@ describe('time', () => {
   it('toLocalDateStr', () => {
     expect(toLocalDateStr(now, 'Asia/Seoul')).toBe('2026-09-03')
   })
+  it('dayRange 서머타임 전환일 (America/New_York 봄)', () => {
+    expect(dayRange('2026-03-08', 'America/New_York')).toEqual({ from: '2026-03-08T05:00:00.000Z', to: '2026-03-09T03:59:59.999Z' })
+  })
+  it('dayRange 서머타임 전환일 (America/New_York 가을)', () => {
+    expect(dayRange('2026-11-01', 'America/New_York')).toEqual({ from: '2026-11-01T04:00:00.000Z', to: '2026-11-02T04:59:59.999Z' })
+  })
+  it('dayRange 서머타임 전환일 (Europe/Paris 봄)', () => {
+    expect(dayRange('2026-03-29', 'Europe/Paris')).toEqual({ from: '2026-03-28T23:00:00.000Z', to: '2026-03-29T21:59:59.999Z' })
+  })
 })

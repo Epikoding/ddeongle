@@ -22,4 +22,11 @@ describe('buildPrompt', () => {
     expect(a).toBeLessThan(b)
     expect(p).toContain('- 엄마 김치찌개: 김치, 돼지고기')
   })
+  it('사용자 입력의 $ 패턴을 특수 치환으로 해석하지 않는다', () => {
+    const text = "어제 $' 먹고 값 $& 였다 $$ 그리고 $` 끝"
+    const p = buildPrompt({ text, referenceAt, tz: 'Asia/Seoul', foods: [{ name: '$& 찌개', ingredients: ["$' 김치"] }] })
+    expect(p.trimEnd().endsWith(text)).toBe(true)
+    expect(p).toContain("- $& 찌개: $' 김치")
+    expect(p).not.toContain('{{')
+  })
 })

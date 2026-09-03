@@ -31,9 +31,23 @@ function offsetFor(dateStr: string, tz: string): string {
   return parts(new Date(`${dateStr}T12:00:00Z`), tz).offset
 }
 
+/** 그 날 현지 자정의 정확한 instant. 서머타임 전환일이면 오프셋을 한 번 다시 잡는다. */
+function localMidnight(dateStr: string, tz: string): Date {
+  const guess = new Date(`${dateStr}T00:00:00${offsetFor(dateStr, tz)}`)
+  const actual = parts(guess, tz).offset
+  if (actual === offsetFor(dateStr, tz)) return guess
+  return new Date(`${dateStr}T00:00:00${actual}`)
+}
+
+function nextDateStr(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const next = new Date(Date.UTC(y, m - 1, d) + 24 * 3600_000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`
+}
+
 export function dayRange(dateStr: string, tz: string): { from: string; to: string } {
-  const off = offsetFor(dateStr, tz)
-  const from = new Date(`${dateStr}T00:00:00${off}`)
-  const to = new Date(from.getTime() + 24 * 3600_000 - 1)
+  const from = localMidnight(dateStr, tz)
+  const to = new Date(localMidnight(nextDateStr(dateStr), tz).getTime() - 1)
   return { from: from.toISOString(), to: to.toISOString() }
 }
