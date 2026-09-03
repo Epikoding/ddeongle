@@ -98,3 +98,8 @@ export async function exportRows(sb: SupabaseClient, from: string, to: string): 
     .is('deleted_at', null).gte('occurred_at', from).lte('occurred_at', to)
     .order('occurred_at', { ascending: true })) as EntryRow[]
 }
+
+export type DayMark = { day: string; has_entry: boolean; has_target: boolean }
+export async function dayMarks(sb: SupabaseClient, fromDate: string, toDate: string): Promise<DayMark[]> {
+  return must(await sb.rpc('day_marks', { p_from: fromDate, p_to: toDate })) as DayMark[]
+}
