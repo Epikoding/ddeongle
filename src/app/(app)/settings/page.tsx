@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getProfile, listInvites, addInvite, updateTimezone } from '@/lib/db'
-import template from '../../../prompts/parse-ko.md'
+import template from '../../../../prompts/parse-ko.md'
 
 const TZS = ['Asia/Seoul', 'Asia/Tokyo', 'America/Los_Angeles', 'America/New_York', 'Europe/London', 'UTC']
 
