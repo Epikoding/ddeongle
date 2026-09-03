@@ -1,15 +1,22 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, listInvites, addInvite, updateTimezone } from '@/lib/db'
+import { getProfile, listInvites, addInvite, updateTimezone, exportRows } from '@/lib/db'
+import { entriesToCsv } from '@/lib/csv'
+import { dayRange, toLocalDateStr } from '@/lib/time'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import template from '../../../../prompts/parse-ko.md'
 
 const TZS = ['Asia/Seoul', 'Asia/Tokyo', 'America/Los_Angeles', 'America/New_York', 'Europe/London', 'UTC']
-
 function toMsg(err: unknown): string {
   const m = err instanceof Error ? err.message : String(err)
   return m === 'not_found' || m === 'profile_missing' ? '프로필을 찾지 못했습니다.' : m
+}
+function Card({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
+  return <section id={id} className="mx-4 mb-3 rounded-2xl border border-line bg-card p-4"><h2 className="mb-3 text-[16px] font-semibold">{title}</h2>{children}</section>
 }
 
 export default function SettingsPage() {
@@ -17,50 +24,83 @@ export default function SettingsPage() {
   const [tz, setTz] = useState('Asia/Seoul')
   const [invites, setInvites] = useState<{ email: string; created_at: string }[]>([])
   const [email, setEmail] = useState('')
-  const [msg, setMsg] = useState<string | null>(null)
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null)
+  const [tzMsg, setTzMsg] = useState<string | null>(null)
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [exportMsg, setExportMsg] = useState<string | null>(null)
 
-  // 프로필이 없어도 화면은 뜬다 — userId는 빈 값으로 두고 초대 목록만이라도 보여준다.
   const load = useCallback(() => {
     const sb = createClient()
-    getProfile(sb).then((p) => { setUserId(p.user_id); setTz(p.timezone) }).catch(() => {})
+    getProfile(sb).then((p) => p.timezone).catch(() => 'Asia/Seoul').then((zone) => {
+      setTz(zone)
+      const today = toLocalDateStr(new Date(), zone)
+      const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 29)
+      setFrom(d.toISOString().slice(0, 10)); setTo(today)
+    })
+    getProfile(sb).then((p) => setUserId(p.user_id)).catch(() => {})
     listInvites(sb).then(setInvites).catch(() => {})
   }, [])
   useEffect(() => { load() }, [load])
 
   async function invite(e: React.FormEvent) {
     e.preventDefault()
-    try { await addInvite(createClient(), email, userId); setEmail(''); setMsg('초대했습니다.'); load() }
-    catch (err) { setMsg(toMsg(err)) }
+    try { await addInvite(createClient(), email, userId); setEmail(''); setInviteMsg('초대했습니다.'); load() }
+    catch (err) { setInviteMsg(toMsg(err)) }
   }
   async function changeTz(v: string) {
-    // 저장에 실패하면 화면의 선택값을 되돌린다 — 다른 화면은 여전히 옛 시간대를 쓴다.
-    const prev = tz; setTz(v)
-    try { await updateTimezone(createClient(), userId, v) }
-    catch (err) { setTz(prev); setMsg(toMsg(err)) }
+    const prev = tz; setTz(v); setTzMsg(null)
+    try { await updateTimezone(createClient(), userId, v) } catch (err) { setTz(prev); setTzMsg(toMsg(err)) }
+  }
+  async function download() {
+    setExportMsg(null)
+    try {
+      const rows = await exportRows(createClient(), dayRange(from, tz).from, dayRange(to, tz).to)
+      // 엑셀이 UTF-8로 알아보게 BOM을 앞에 붙인다.
+      const blob = new Blob(['\uFEFF' + entriesToCsv(rows, tz)], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = `gut-log_${from}_${to}.csv`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) { setExportMsg('내보내지 못했습니다. ' + toMsg(err)) }
   }
   async function signOut() { await createClient().auth.signOut(); window.location.href = '/login' }
+  const fmtDate = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'numeric', day: 'numeric' }).format(new Date(iso))
 
   return (
-    <main className="mx-auto max-w-md space-y-6 p-4">
-      <Link href="/" className="text-sm text-neutral-600">← 타임라인</Link>
-      <section>
-        <h2 className="font-bold">초대 이메일</h2>
-        <form onSubmit={invite} className="mt-2 flex gap-2">
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="가족 이메일" className="flex-1 rounded border p-2" />
-          <button className="rounded bg-black px-3 text-white">추가</button>
+    <main className="pb-6">
+      <PageHeader title="설정" />
+      <Card title="초대 이메일">
+        <form onSubmit={invite} className="flex gap-2">
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="가족 이메일" className="h-10 flex-1 rounded-xl border-line bg-bg" />
+          <Button type="submit" className="h-10 rounded-xl px-4 font-semibold">추가</Button>
         </form>
-        {msg && <p className="mt-1 text-sm">{msg}</p>}
-        <ul className="mt-2 text-sm">{invites.map((i) => <li key={i.email}>{i.email}</li>)}</ul>
-      </section>
-      <section>
-        <h2 className="font-bold">시간대</h2>
-        <select value={tz} onChange={(e) => changeTz(e.target.value)} className="mt-2 rounded border p-2">{TZS.map((t) => <option key={t}>{t}</option>)}</select>
-      </section>
-      <section>
-        <h2 className="font-bold">프롬프트 원문</h2>
-        <details className="mt-2 text-xs"><summary>보기</summary><pre className="whitespace-pre-wrap rounded bg-neutral-100 p-2">{template}</pre></details>
-      </section>
-      <button onClick={signOut} className="w-full rounded-xl border p-2 text-sm">로그아웃</button>
+        {inviteMsg && <p className="mt-2 text-[12px] text-mute">{inviteMsg}</p>}
+        <ul className="mt-3 divide-y divide-line text-[14px]">
+          {invites.map((i) => <li key={i.email} className="flex justify-between py-2"><span>{i.email}</span><span className="text-mute">{fmtDate(i.created_at)}</span></li>)}
+        </ul>
+      </Card>
+      <Card title="시간대">
+        <Select value={tz} onValueChange={changeTz}>
+          <SelectTrigger className="h-10 rounded-xl border-line bg-bg"><SelectValue /></SelectTrigger>
+          <SelectContent className="shadow-none">{TZS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+        </Select>
+        {tzMsg && <p className="mt-2 text-[12px] text-warn">{tzMsg}</p>}
+      </Card>
+      <Card title="내보내기" id="export">
+        <div className="flex items-center gap-2 text-[14px]">
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 flex-1 rounded-xl border border-line bg-bg px-2" />
+          <span className="text-mute">~</span>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-10 flex-1 rounded-xl border border-line bg-bg px-2" />
+        </div>
+        <Button onClick={download} disabled={!from || !to} className="mt-3 h-10 w-full rounded-xl font-semibold">CSV 내려받기</Button>
+        {exportMsg && <p role="alert" className="mt-2 text-[12px] text-warn">{exportMsg}</p>}
+      </Card>
+      <details className="mx-4 mb-3 rounded-2xl border border-line bg-card p-4 text-[14px]">
+        <summary className="cursor-pointer font-semibold">프롬프트 원문</summary>
+        <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-bg p-2 text-[12px] text-mute">{template}</pre>
+      </details>
+      <div className="px-4"><Button variant="outline" onClick={signOut} className="h-10 w-full rounded-xl border-line">로그아웃</Button></div>
     </main>
   )
 }

@@ -24,3 +24,9 @@ export async function loginUrlFor(email: string): Promise<string> {
   const type = data.properties.verification_type || 'magiclink'
   return `/auth/callback?token_hash=${data.properties.hashed_token}&type=${type}`
 }
+
+export async function removeInvite(email: string): Promise<void> {
+  const { url, service } = localKeys()
+  const admin = createClient(url, service, { auth: { persistSession: false } })
+  await admin.from('invites').delete().eq('email', email)
+}
