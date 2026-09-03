@@ -64,22 +64,22 @@ export default function AnalysisPage() {
   const mealBase = rows.find((r) => ['ingredient', 'food', 'pattern'].includes(r.grp))
   const basePct = mealBase ? baselineOf(mealBase) : null
   const allShort = rows.length > 0 && rows.every((r) => !r.enough)
-  const pill = 'h-8 rounded-full border-line bg-card px-3 text-[12px] text-mute'
+  const pill = 'h-8 rounded-full border-line bg-card px-3 text-[14px] text-ink'
 
   return (
     <main>
       <PageHeader title="용의자 순위" subtitle={`${targetLabel} · 최근 ${days}일 · ${windowHours}시간 창`} />
       <div className="flex gap-1.5 px-4 pb-3">
         <Select value={target} onValueChange={(v) => setTarget(v as typeof target)}>
-          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="표적" className={pill}><SelectValue /></SelectTrigger>
           <SelectContent className="shadow-none">{TARGETS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={String(days)} onValueChange={(v) => setDays(Number(v) as typeof days)}>
-          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="기간" className={pill}><SelectValue /></SelectTrigger>
           <SelectContent className="shadow-none">{DAYS.map((d) => <SelectItem key={d} value={String(d)}>최근 {d}일</SelectItem>)}</SelectContent>
         </Select>
         <Select value={String(windowHours)} onValueChange={(v) => setWindowHours(Number(v) as typeof windowHours)}>
-          <SelectTrigger className={pill}><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="창" className={pill}><SelectValue /></SelectTrigger>
           <SelectContent className="shadow-none">{WINDOWS.map((w) => <SelectItem key={w} value={String(w)}>{w}시간 창</SelectItem>)}</SelectContent>
         </Select>
       </div>
@@ -90,8 +90,8 @@ export default function AnalysisPage() {
           rows.length === 0 ? <EmptyState icon={BarChart3} title="기간 안에 기록이 없어요" hint="기록이 쌓이면 여기에 순위가 나옵니다" /> : (
           <>
             <p className="mb-1 flex items-center gap-3 text-[12px] text-mute">
-              <span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-warn align-middle" />먹은 뒤 {targetLabel} 비율</span>
-              {basePct != null && <span><i className="mr-1 inline-block h-2.5 w-0.5 bg-ink align-middle" />평소 비율 {Math.round(basePct * 100)}%</span>}
+              <span><i aria-hidden className="mr-1 inline-block h-2 w-3 rounded-sm bg-warn align-middle" />먹은 뒤 {targetLabel} 비율</span>
+              {basePct != null && <span><i aria-hidden className="mr-1 inline-block h-2.5 w-0.5 bg-ink align-middle" />평소 비율 {Math.round(basePct * 100)}%</span>}
             </p>
             {allShort && <p className="mb-2 rounded-xl bg-accent-soft p-2.5 text-[12px] text-ink">노출이 3번 이상 쌓이면 배수가 나옵니다.</p>}
             <RankingBars rows={rows} pickedKey={pickedKey} onPick={pick} detail={detail} detailError={detailError} tz={tz} />

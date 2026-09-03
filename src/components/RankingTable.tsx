@@ -22,7 +22,7 @@ export function RankingBars({ rows, pickedKey, onPick, detail, detailError, tz }
   const fmt = (iso: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: tz, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
   return (
     <ul className="divide-y divide-line">
-      {rows.map((r) => {
+      {rows.map((r, i) => {
         const pct = r.exposed_n ? (r.exposed_hits / r.exposed_n) * 100 : 0
         const base = baselineOf(r)
         const tone = ratioTone(r)
@@ -30,22 +30,25 @@ export function RankingBars({ rows, pickedKey, onPick, detail, detailError, tz }
         const num = tone === 'warn' ? 'text-warn' : tone === 'accent' ? 'text-accent' : 'text-mute'
         const isDay = DAY_GROUPS.includes(r.grp)
         const open = pickedKey === rowKey(r)
+        const plain = !r.enough || r.ratio == null // 숫자가 아닌 배수 칸(자료 부족·비교 불가)은 작게
+        const detailId = `detail-${i}` // 후보 이름에 콜론·한글이 섞여 선택자로 안전하지 않으므로 자리 번호로 만든다
         return (
-          <li key={rowKey(r)} className={cn(!r.enough && 'opacity-40')}>
+          <li key={rowKey(r)}>
             <button type="button" onClick={() => onPick(r)} data-testid="ranking-row" aria-expanded={open}
-              className="grid w-full grid-cols-[84px_1fr_52px] items-center gap-2 py-2.5 text-left">
+              aria-controls={open ? detailId : undefined}
+              className={cn('grid w-full grid-cols-[84px_1fr_52px] items-center gap-2 py-2.5 text-left', !r.enough && 'opacity-40')}>
               <div className="text-right">
                 <p className="truncate text-[12px] font-semibold">{r.candidate}{r.grp === 'ingredient' && isWatched(r.candidate) && <span className="ml-1 rounded-full bg-warn-soft px-1 text-[12px] text-warn">감시</span>}</p>
-                <p className="text-[12px] text-mute">{GRP_LABEL[r.grp] ?? r.grp} · {r.exposed_n}{isDay ? '일' : '번'}{isDay && <span className="ml-1 rounded bg-line px-1">날 기준</span>}</p>
+                <p className="text-[12px] text-mute">{GRP_LABEL[r.grp] ?? r.grp} · {r.exposed_n}{isDay ? '일' : '번'}{isDay && <span className="ml-1 rounded-full bg-line px-1">날 기준</span>}</p>
               </div>
               <div className="relative h-4 rounded bg-card">
                 <div className={cn('absolute inset-y-0 left-0 rounded', bar)} style={{ width: `${pct}%` }} />
                 {base != null && <div className="absolute -inset-y-0.5 w-0.5 bg-ink" style={{ left: `${base * 100}%` }} aria-hidden />}
               </div>
-              <p className={cn('text-right text-[14px] font-bold tabular-nums', num, !r.enough && 'text-[12px] font-normal')}>{formatRatio(r)}</p>
+              <p className={cn('text-right text-[14px] font-bold whitespace-nowrap tabular-nums', num, plain && 'text-[12px] font-normal')}>{formatRatio(r)}</p>
             </button>
             {open && (
-              <div className="mb-2 rounded-xl bg-card p-3 text-[12px]">
+              <div id={detailId} className="mb-2 rounded-xl bg-card p-3 text-[12px]">
                 {detailError && <p role="alert" className="text-warn">{detailError}</p>}
                 {!detailError && detail.length === 0 && <p className="text-mute">불러오는 중…</p>}
                 <ul className="space-y-1">
