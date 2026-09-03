@@ -18,6 +18,7 @@ export default function HomePage() {
   const [foods, setFoods] = useState<FoodHint[]>([])
   const [sheet, setSheet] = useState<{ result: Extract<PasteResult, { ok: true }>; raw: RawInput } | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [inputKey, setInputKey] = useState(0) // 저장에 성공하면 올려서 InputBar를 새로 띄운다(입력·기준 시각 초기화)
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const loading = !date || loadedKey !== `${date}|${tz}|${reloadKey}`
@@ -63,9 +64,9 @@ export default function HomePage() {
         <div className="space-y-2">
           {entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`}><EntryCard entry={e} tz={tz} /></Link>)}
         </div>}
-      <InputBar tz={tz} foods={foods} onParsed={(result, raw) => setSheet({ result, raw })} />
+      <InputBar key={inputKey} tz={tz} foods={foods} onParsed={(result, raw) => setSheet({ result, raw })} />
       {sheet && <ConfirmSheet result={sheet.result} raw={sheet.raw} tz={tz}
-        onSaved={() => { setSheet(null); setReloadKey((k) => k + 1); listFoods(createClient()).then(setFoods) }}
+        onSaved={() => { setSheet(null); setReloadKey((k) => k + 1); setInputKey((k) => k + 1); listFoods(createClient()).then(setFoods) }}
         onClose={() => setSheet(null)} />}
     </main>
   )

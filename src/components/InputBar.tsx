@@ -32,7 +32,7 @@ export function InputBar({ tz, foods, onParsed }:
 
   return (
     <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md space-y-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2}
+      <textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no') }} rows={2}
         placeholder="키보드 마이크로 말하세요. 예: 아까 12시에 김치찌개 먹었고 지금 배가 좀 아파"
         className="w-full rounded-lg border p-2" data-testid="input-text" />
       <div className="flex gap-2">
