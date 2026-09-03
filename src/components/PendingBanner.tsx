@@ -35,7 +35,7 @@ export function PendingBanner({ onFlushed }: { onFlushed: () => void }) {
   }
 
   return (
-    <div className="mx-4 mb-2 flex items-center justify-between rounded-xl border border-warn/60 bg-warn-soft px-3 py-2 text-[14px] text-warn">
+    <div role="status" className="mx-4 mb-2 flex items-center justify-between rounded-xl border border-warn/60 bg-warn-soft px-3 py-2 text-[14px] text-warn">
       <span>보내지 못한 기록 {items.length}건이 있습니다.</span>
       <button onClick={flush} disabled={busy} className="font-semibold underline disabled:opacity-50">다시 보내기</button>
     </div>

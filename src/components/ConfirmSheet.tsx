@@ -19,6 +19,8 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
   const [editing, setEditing] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  // 안내 띠의 어조 — 문구를 만든 자리에서 정한다(JSX에서 문구를 되짚어 판별하지 않는다)
+  const [msgTone, setMsgTone] = useState<'ok' | 'warn'>('warn')
   const [showRaw, setShowRaw] = useState(false)
   const [queuedId, setQueuedId] = useState<string | null>(null)
   // 저장 직전 재검사에서 걸린 항목 — 인덱스별 사유. 고칠 때까지 저장에서 뺀다
@@ -44,6 +46,7 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
     setProblems(failed)
     if (ready.length === 0) {
       setMsg('저장할 수 있는 항목이 없습니다. 표시된 항목을 고쳐 주세요.')
+      setMsgTone('warn')
       return
     }
     setBusy(true)
@@ -59,9 +62,11 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
       setProblems(restProblems)
       setEditing(null)
       setMsg(rest.length > 0 ? `${ready.length}건 저장했습니다. 남은 ${rest.length}건은 시각을 정한 뒤 저장하세요.` : null)
+      setMsgTone('ok') // 저장에 성공한 뒤의 안내다 — 경고색·긴급 알림으로 내보내지 않는다
       if (rest.length > 0 && clientId) setClientId(newId()) // 남은 항목은 새 회차로 보낸다
       onSaved(rest.length)
     } catch (err) {
+      setMsgTone('warn')
       const kept = `저장하지 못해 폰에 보관했습니다. 다음에 열 때 다시 보냅니다. (${(err as Error).message})`
       // 이미 보관해 둔 회차가 있어도 편집분이 반영되도록 새로 넣고 옛것을 뺀다(넣기 실패 시 옛것을 잃지 않게 순서를 지킨다)
       let queued: PendingItem | null = null
@@ -82,7 +87,7 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
     <Sheet open onOpenChange={(o) => { if (!o) onClose() }}>
       <SheetContent side="bottom" aria-describedby={undefined}
         onCloseAutoFocus={(e) => { e.preventDefault(); (document.querySelector('[data-testid="open-input"]') as HTMLElement | null)?.focus() }}
-        className="mx-auto flex max-h-[90dvh] max-w-md flex-col gap-0 rounded-t-[22px] border-line bg-card p-0" data-testid="confirm-sheet">
+        className="mx-auto flex max-h-[90dvh] max-w-md flex-col gap-0 rounded-t-[22px] border-line bg-card p-0 shadow-[0_-10px_30px_rgba(0,0,0,.15)]" data-testid="confirm-sheet">
         <SheetHeader className="px-4 pt-3 pb-2"><SheetTitle className="text-[20px] font-bold">확인 후 저장</SheetTitle></SheetHeader>
         <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-2">
           {result.questions.length > 0 && (
@@ -109,7 +114,9 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
               )}
             </div>
           ))}
-          {msg && <p role="alert" className="rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{msg}</p>}
+          {msg && (msgTone === 'ok'
+            ? <p role="status" className="rounded-xl bg-accent-soft p-2.5 text-[14px] text-ink">{msg}</p>
+            : <p role="alert" className="rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{msg}</p>)}
         </div>
         <div className="border-t border-line bg-card px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button onClick={save} disabled={busy || entries.length - blocked === 0} className="h-12 w-full rounded-xl text-[16px] font-bold" data-testid="save-entries">

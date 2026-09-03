@@ -39,8 +39,11 @@ export function EntryCard({ entry, tz, onClick, tone = 'normal' }:
   const ring = tone === 'error' ? 'border-warn ring-2 ring-warn/25' : tone === 'warn' ? 'border-warn/70 ring-2 ring-warn/15' : 'border-line'
   const time = new Intl.DateTimeFormat('ko-KR', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(entry.occurred_at))
   const tags = entry.kind === 'meal' ? [...new Set(entry.data.foods.flatMap((f) => f.ingredients))] : []
+  // 누를 수 있으면 진짜 버튼으로 — div+onClick은 키보드로 닿지 않아 확인 시트에서 카드를 고칠 길이 없다
+  const className = cn('flex w-full gap-3 rounded-2xl border bg-card p-3 text-left', ring, onClick && 'cursor-pointer active:bg-accent-soft/40')
+  const Root = onClick ? 'button' : 'div'
   return (
-    <div onClick={onClick} className={cn('flex gap-3 rounded-2xl border bg-card p-3', ring, onClick && 'cursor-pointer active:bg-accent-soft/40')}>
+    <Root {...(onClick ? { type: 'button' as const, onClick } : {})} className={className}>
       <KindIcon kind={entry.kind} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
@@ -59,6 +62,6 @@ export function EntryCard({ entry, tz, onClick, tone = 'normal' }:
           </div>
         )}
       </div>
-    </div>
+    </Root>
   )
 }

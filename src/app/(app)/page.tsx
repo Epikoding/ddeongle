@@ -18,7 +18,9 @@ import { EmptyState } from '@/components/ui/EmptyState'
 
 function dayTitle(date: string, tz: string): { title: string; rel: string | null } {
   const d = new Date(`${date}T12:00:00Z`)
-  const title = new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', month: 'long', day: 'numeric', weekday: 'short' }).format(d)
+  // ko-KR 기본 서식은 `9월 3일 (목)` — 명세 5.1의 `9월 3일 목`이 되게 조각에서 괄호만 뺀다
+  const title = new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', month: 'long', day: 'numeric', weekday: 'short' })
+    .formatToParts(d).map((p) => (p.type === 'literal' ? p.value.replace(/[()]/g, '') : p.value)).join('').trim()
   const today = toLocalDateStr(new Date(), tz)
   const y = new Date(`${today}T12:00:00Z`); y.setUTCDate(y.getUTCDate() - 1)
   const rel = date === today ? '오늘' : date === y.toISOString().slice(0, 10) ? '어제' : null
@@ -84,8 +86,13 @@ export default function HomePage() {
       <PendingBanner onFlushed={() => setReloadKey((k) => k + 1)} />
 
       <section className="space-y-2 px-4">
-        {loading ? <p className="py-8 text-center text-[12px] text-mute">불러오는 중…</p> :
-          loadError ? <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{loadError}</p> :
+        {loading ? <p role="status" className="py-8 text-center text-[12px] text-mute">불러오는 중…</p> :
+          loadError ? (
+            <div role="alert" className="flex items-center justify-between gap-2 rounded-xl bg-warn-soft p-3 text-[12px] text-warn">
+              <span>{loadError}</span>
+              <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="shrink-0 font-semibold underline">다시 시도</button>
+            </div>
+          ) :
           entries.length === 0 ? <EmptyState icon={Mic} title="아직 기록이 없어요" hint="아래에서 말로 적어 보세요" /> :
           entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`} className="block"><EntryCard entry={e} tz={tz} /></Link>)}
       </section>

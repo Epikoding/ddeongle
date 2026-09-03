@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,14 +19,24 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<'no' | 'yes' | 'manual'>('no')
   const [promptText, setPromptText] = useState('')
+  // 버튼 라벨만 4초 뒤 되돌린다 (명세 5.2) — copied는 단계·수동 복사 안내가 계속 쓰므로 그대로 둔다
+  const [justCopied, setJustCopied] = useState(false)
+  const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const step = copied === 'no' ? 0 : paste.trim() ? 2 : 1
+
+  function clearRevert() { if (revertTimer.current) { clearTimeout(revertTimer.current); revertTimer.current = null } }
+  useEffect(() => () => { if (revertTimer.current) clearTimeout(revertTimer.current) }, []) // 시트가 사라져도 타이머를 남기지 않는다
 
   async function copyPrompt() {
     if (!text.trim()) return
     const now = new Date()
     const p = buildPrompt({ text, referenceAt: now, tz, foods })
     setReferenceAt(now); setPromptText(p)
-    try { await navigator.clipboard.writeText(p); setCopied('yes') } catch { setCopied('manual') }
+    try {
+      await navigator.clipboard.writeText(p)
+      setCopied('yes'); setJustCopied(true)
+      clearRevert(); revertTimer.current = setTimeout(() => setJustCopied(false), 4000)
+    } catch { setCopied('manual'); setJustCopied(false); clearRevert() }
   }
 
   function submitPaste() {
@@ -43,23 +53,23 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" aria-describedby={undefined}
         onCloseAutoFocus={(e) => { e.preventDefault(); (document.querySelector('[data-testid="open-input"]') as HTMLElement | null)?.focus() }}
-        className="mx-auto max-h-[90dvh] max-w-md gap-0 overflow-y-auto rounded-t-[22px] border-line bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        className="mx-auto max-h-[90dvh] max-w-md gap-0 overflow-y-auto rounded-t-[22px] border-line bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,.15)]">
         <SheetHeader className="px-0 pt-3 pb-2"><SheetTitle className="text-[20px] font-bold">말로 적기</SheetTitle></SheetHeader>
         <ol className="mb-3 grid grid-cols-3 gap-1.5 text-[12px]">
           {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-accent' : i < step ? 'bg-line text-mute line-through' : 'bg-bg text-mute')}>{s}</li>)}
         </ol>
-        <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no') }} rows={3} autoFocus
+        <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={3} autoFocus
           placeholder="키보드 마이크를 누르고 말하세요. 예: 아까 12시에 김치찌개 먹었고 지금 배가 좀 아파"
-          className="rounded-xl border-line bg-bg text-[14px]" data-testid="input-text" />
+          className="rounded-xl border-line bg-bg text-[16px]" data-testid="input-text" />
         <Button onClick={copyPrompt} disabled={!text.trim()} className="mt-2 h-11 w-full rounded-xl text-[14px] font-bold" data-testid="copy-prompt">
-          {copied === 'yes' ? '복사됨 ✓ 자기 LLM에 붙여넣기' : '프롬프트 복사'}
+          {justCopied ? '복사됨 ✓ 자기 LLM에 붙여넣기' : '프롬프트 복사'}
         </Button>
         {copied === 'manual' && (
           <details open className="mt-2 rounded-xl border border-line bg-bg p-2 text-[12px]"><summary>복사가 막혔습니다. 아래를 길게 눌러 복사하세요.</summary><pre className="whitespace-pre-wrap">{promptText}</pre></details>
         )}
-        <div className={cn('mt-3 transition-opacity', copied === 'no' && 'opacity-50')}>
+        <div className="mt-3">
           <Textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={3}
-            placeholder="LLM 답변(JSON)을 여기에 붙여넣기" className="rounded-xl border-line bg-bg font-mono text-[12px]" data-testid="paste-text" />
+            placeholder="LLM 답변(JSON)을 여기에 붙여넣기" className="rounded-xl border-line bg-bg font-mono text-[16px]" data-testid="paste-text" />
           {error && <p role="alert" className="mt-2 rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{error}</p>}
           <Button variant="outline" onClick={submitPaste} disabled={!paste.trim()} className="mt-2 h-11 w-full rounded-xl border-accent text-[14px] font-bold text-accent" data-testid="submit-paste">
             확인 시트로
