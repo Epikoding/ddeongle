@@ -47,14 +47,14 @@ export function EntryCard({ entry, tz, onClick, tone = 'normal' }:
           <p className="truncate text-[16px] font-semibold leading-tight">{summarizeEntry(entry)}</p>
           <span className="flex shrink-0 items-center gap-1 text-[12px] text-mute tabular-nums">
             {entry.time_precision === 'unknown' ? <span className="rounded-full bg-warn-soft px-1.5 text-warn">시각 없음</span> : time}
-            {entry.time_precision === 'approx' && <span className="rounded-full bg-warn-soft px-1.5 text-[11px] text-warn">대략</span>}
+            {entry.time_precision === 'approx' && <span className="rounded-full bg-warn-soft px-1.5 text-warn">대략</span>}
           </span>
         </div>
         <p className="mt-0.5 text-[12px] text-mute">{subLabel(entry)}</p>
         {tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {tags.map((t) => (
-              <span key={t} className={cn('rounded-full px-2 py-0.5 text-[11px]', isWatched(t) ? 'bg-warn-soft text-warn' : 'bg-line text-ink')}>{t}</span>
+              <span key={t} className={cn('rounded-full px-2 py-0.5 text-[12px]', isWatched(t) ? 'bg-warn-soft text-warn' : 'bg-line text-ink')}>{t}</span>
             ))}
           </div>
         )}

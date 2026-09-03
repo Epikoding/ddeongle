@@ -59,11 +59,11 @@ export default function HomePage() {
   const subtitle = [rel, loading ? null : `기록 ${entries.length}건`].filter(Boolean).join(' · ')
 
   return (
-    <main className="pb-[152px]">
+    <main className="pb-[88px]">
       <header className="flex items-start justify-between px-4 pt-4 pb-2">
         <div>
           <h1 className="text-[24px] font-bold tracking-[-0.01em]">{title || ' '}</h1>
-          <p className="mt-0.5 text-[13px] text-mute">{subtitle || ' '}</p>
+          <p className="mt-0.5 text-[12px] text-mute">{subtitle || ' '}</p>
         </div>
         <div className="flex items-center">
           <button type="button" onClick={() => shift(-1)} disabled={!date} aria-label="하루 전" className="rounded-full p-2 text-mute hover:bg-accent-soft disabled:opacity-40"><ChevronLeft size={22} /></button>
@@ -75,8 +75,8 @@ export default function HomePage() {
       <PendingBanner onFlushed={() => setReloadKey((k) => k + 1)} />
 
       <section className="space-y-2 px-4">
-        {loading ? <p className="py-8 text-center text-[13px] text-mute">불러오는 중…</p> :
-          loadError ? <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[13px] text-warn">{loadError}</p> :
+        {loading ? <p className="py-8 text-center text-[12px] text-mute">불러오는 중…</p> :
+          loadError ? <p role="alert" className="rounded-xl bg-warn-soft p-3 text-[12px] text-warn">{loadError}</p> :
           entries.length === 0 ? <EmptyState icon={Mic} title="아직 기록이 없어요" hint="아래에서 말로 적어 보세요" /> :
           entries.map((e) => <Link key={e.id} href={`/entries/${e.id}`} className="block"><EntryCard entry={e} tz={tz} /></Link>)}
       </section>

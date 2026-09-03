@@ -29,7 +29,7 @@ export function DayPicker({ date, onPick }: { date: string; tz: string; onPick: 
   const targetDays = Object.values(marks).filter((m) => m.has_target).map((m) => new Date(`${m.day}T12:00:00`))
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { if (o) setMonth(new Date(`${date}T12:00:00`)); setOpen(o) }}>
       <PopoverTrigger asChild>
         <button type="button" aria-label="달력" data-testid="calendar-button" className="rounded-full p-2 text-mute hover:bg-accent-soft"><CalendarDays size={22} /></button>
       </PopoverTrigger>
@@ -39,7 +39,7 @@ export function DayPicker({ date, onPick }: { date: string; tz: string; onPick: 
           onSelect={(d) => { if (d) { onPick(ymd(d)); setOpen(false) } }}
           modifiers={{ entry: entryDays, target: targetDays }}
           modifiersClassNames={{ entry: 'gl-dot-entry', target: 'gl-dot-target' }} />
-        <p className="px-2 pb-1 text-[11px] text-mute"><span className="inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" /> 기록 <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-warn align-middle" /> 설사</p>
+        <p className="px-2 pb-1 text-[12px] text-mute"><span className="inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" /> 기록 <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-warn align-middle" /> 설사</p>
       </PopoverContent>
     </Popover>
   )

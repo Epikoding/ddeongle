@@ -101,7 +101,10 @@
 }
 
 /* ── 달력 점(DayPicker) ── */
+/* 점은 날짜 칸(td)에 붙는다 — modifiersClassNames가 td로 가고, 고른 날의 td가 data-selected="true"를 갖는다(실측).
+   칸 안의 버튼이 z-10이라 점은 그보다 위(20)에 둔다. 고른 날은 버튼 배경이 accent라 점 색을 뒤집는다. */
 .gl-dot-entry, .gl-dot-target { position: relative; }
-.gl-dot-entry::after, .gl-dot-target::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 5px; height: 5px; border-radius: 9999px; transform: translateX(-50%); }
+.gl-dot-entry::after, .gl-dot-target::after { content: ""; position: absolute; left: 50%; bottom: 3px; z-index: 20; width: 5px; height: 5px; border-radius: 9999px; transform: translateX(-50%); }
 .gl-dot-entry::after { background: var(--accent); }
 .gl-dot-target::after { background: var(--warn); }
+.gl-dot-entry[data-selected="true"]::after, .gl-dot-target[data-selected="true"]::after { background: var(--primary-foreground); }
