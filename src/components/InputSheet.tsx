@@ -56,11 +56,11 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
         className="mx-auto max-h-[90dvh] max-w-md gap-0 overflow-y-auto rounded-t-[22px] border-line bg-card px-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,.15)]">
         <SheetHeader className="px-0 pt-3 pb-2"><SheetTitle className="text-[20px] font-bold">말로 적기</SheetTitle></SheetHeader>
         <ol className="mb-3 grid grid-cols-3 gap-1.5 text-[12px]">
-          {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-accent' : i < step ? 'bg-line text-mute line-through' : 'bg-bg text-mute')}>{s}</li>)}
+          {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-ink' : i < step ? 'bg-line text-ink line-through' : 'bg-bg text-mute')}>{s}</li>)}
         </ol>
         <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={3} autoFocus
           placeholder="키보드 마이크를 누르고 말하세요. 예: 아까 12시에 김치찌개 먹었고 지금 배가 좀 아파"
-          className="rounded-xl border-line bg-bg text-[16px]" data-testid="input-text" />
+          className="rounded-xl border-line bg-bg text-[16px] md:text-[16px]" data-testid="input-text" />
         <Button onClick={copyPrompt} disabled={!text.trim()} className="mt-2 h-11 w-full rounded-xl text-[14px] font-bold" data-testid="copy-prompt">
           {justCopied ? '복사됨 ✓ 자기 LLM에 붙여넣기' : '프롬프트 복사'}
         </Button>
@@ -69,7 +69,7 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
         )}
         <div className="mt-3">
           <Textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={3}
-            placeholder="LLM 답변(JSON)을 여기에 붙여넣기" className="rounded-xl border-line bg-bg font-mono text-[16px]" data-testid="paste-text" />
+            placeholder="LLM 답변(JSON)을 여기에 붙여넣기" className="rounded-xl border-line bg-bg font-mono text-[16px] md:text-[16px]" data-testid="paste-text" />
           {error && <p role="alert" className="mt-2 rounded-xl bg-warn-soft p-2.5 text-[14px] text-warn">{error}</p>}
           <Button variant="outline" onClick={submitPaste} disabled={!paste.trim()} className="mt-2 h-11 w-full rounded-xl border-accent text-[14px] font-bold text-accent" data-testid="submit-paste">
             확인 시트로
