@@ -75,7 +75,7 @@ export default function AnalysisPage() {
 
   return (
     <main>
-      <PageHeader title="용의자 순위" subtitle={`${targetLabel} · 최근 ${days}일 · ${windowHours}시간 창`} />
+      <PageHeader title="용의자 순위" subtitle={`${windowHours}시간 안에 생긴 ${targetLabel} · 최근 ${days}일`} />
       <div className="flex flex-wrap gap-1.5 px-4 pb-3">
         <Select value={target} onValueChange={(v) => setTarget(v as typeof target)}>
           <SelectTrigger aria-label="표적" className={pill}><SelectValue /></SelectTrigger>
@@ -87,7 +87,7 @@ export default function AnalysisPage() {
         </Select>
         <Select value={String(windowHours)} onValueChange={(v) => setWindowHours(Number(v) as typeof windowHours)}>
           <SelectTrigger aria-label="창" className={pill}><SelectValue /></SelectTrigger>
-          <SelectContent className="shadow-none">{WINDOWS.map((w) => <SelectItem key={w} value={String(w)}>{w}시간 창</SelectItem>)}</SelectContent>
+          <SelectContent className="shadow-none">{WINDOWS.map((w) => <SelectItem key={w} value={String(w)}>{w}시간 안에</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
