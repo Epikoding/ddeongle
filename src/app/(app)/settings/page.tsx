@@ -22,6 +22,8 @@ function Card({ title, id, children }: { title: string; id?: string; children: R
 
 export default function SettingsPage() {
   const [userId, setUserId] = useState('')
+  // 프로필을 못 읽으면 관리자가 아닌 쪽으로 둔다 — 어차피 RLS가 막으므로 폼을 띄워 봐야 실패만 보여준다
+  const [isAdmin, setIsAdmin] = useState(false)
   const [tz, setTz] = useState('Asia/Seoul')
   const [invites, setInvites] = useState<{ email: string; created_at: string }[]>([])
   const [email, setEmail] = useState('')
@@ -40,7 +42,7 @@ export default function SettingsPage() {
   // 시간대와 내보내기 기간 기본값은 마운트 때 한 번만 정한다 — 초대를 추가해도 고르던 기간이 되돌아가지 않게.
   useEffect(() => {
     getProfile(createClient())
-      .then((p) => { setUserId(p.user_id); setTz(p.timezone); return p.timezone })
+      .then((p) => { setUserId(p.user_id); setTz(p.timezone); setIsAdmin(p.is_admin); return p.timezone })
       .catch(() => 'Asia/Seoul')
       .then((zone) => {
         const today = toLocalDateStr(new Date(), zone)
@@ -83,11 +85,17 @@ export default function SettingsPage() {
     <main className="pb-6">
       <PageHeader title="설정" />
       <Card title="초대 이메일">
-        <form onSubmit={invite} className="flex gap-2">
-          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="가족 이메일" className="h-10 flex-1 rounded-xl border-line bg-bg" />
-          <Button type="submit" className="h-10 rounded-xl px-4 font-semibold">추가</Button>
-        </form>
-        {inviteMsg && <p role={inviteMsg.ok ? undefined : 'alert'} className={cn('mt-2 text-[12px]', inviteMsg.ok ? 'text-mute' : 'text-warn')}>{inviteMsg.text}</p>}
+        {isAdmin ? (
+          <>
+            <form onSubmit={invite} className="flex gap-2">
+              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="가족 이메일" className="h-10 flex-1 rounded-xl border-line bg-bg" />
+              <Button type="submit" className="h-10 rounded-xl px-4 font-semibold">추가</Button>
+            </form>
+            {inviteMsg && <p role={inviteMsg.ok ? undefined : 'alert'} className={cn('mt-2 text-[12px]', inviteMsg.ok ? 'text-mute' : 'text-warn')}>{inviteMsg.text}</p>}
+          </>
+        ) : (
+          <p className="text-[14px] text-mute">초대는 관리자만 추가할 수 있어요.</p>
+        )}
         <ul className="mt-3 divide-y divide-line text-[14px]">
           {invites.map((i) => <li key={i.email} className="flex justify-between py-2"><span>{i.email}</span><span className="text-mute">{fmtDate(i.created_at)}</span></li>)}
         </ul>

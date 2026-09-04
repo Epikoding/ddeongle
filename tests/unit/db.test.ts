@@ -81,8 +81,15 @@ describe('getProfile', () => {
   })
 
   it('행이 있으면 그대로 돌려준다', async () => {
-    const { sb } = fakeClient({ data: { user_id: 'u', display_name: null, timezone: 'Asia/Seoul' }, error: null })
-    await expect(getProfile(sb)).resolves.toEqual({ user_id: 'u', display_name: null, timezone: 'Asia/Seoul' })
+    const { sb } = fakeClient({ data: { user_id: 'u', display_name: null, timezone: 'Asia/Seoul', is_admin: false }, error: null })
+    await expect(getProfile(sb)).resolves.toEqual({ user_id: 'u', display_name: null, timezone: 'Asia/Seoul', is_admin: false })
+  })
+
+  // 설정 화면이 초대 폼을 보일지 말지를 이 값 하나로 정한다 — 빠뜨리면 관리자에게도 폼이 사라진다
+  it('is_admin도 함께 읽어 온다', async () => {
+    const { sb, calls } = fakeClient({ data: { user_id: 'u', display_name: null, timezone: 'Asia/Seoul', is_admin: true }, error: null })
+    await expect(getProfile(sb)).resolves.toMatchObject({ is_admin: true })
+    expect(calls).toContain('select(user_id, display_name, timezone, is_admin)')
   })
 
   it('에러는 메시지 그대로 올린다', async () => {

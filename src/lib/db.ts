@@ -18,8 +18,8 @@ function must<T>(r: { data: T | null; error: { message: string } | null }): T {
 }
 
 export async function getProfile(sb: SupabaseClient) {
-  const row = must(await sb.from('profiles').select('user_id, display_name, timezone').maybeSingle()) as
-    { user_id: string; display_name: string | null; timezone: string } | null
+  const row = must(await sb.from('profiles').select('user_id, display_name, timezone, is_admin').maybeSingle()) as
+    { user_id: string; display_name: string | null; timezone: string; is_admin: boolean } | null
   if (!row) throw new Error('profile_missing')
   return row
 }
