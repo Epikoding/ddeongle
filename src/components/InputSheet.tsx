@@ -11,17 +11,22 @@ import { cn } from '@/lib/utils'
 
 const STEPS = ['1 말하기', '2 프롬프트 복사', '3 결과 붙여넣기'] as const
 
-/** 클립보드 API가 없을 때의 대체 복사 — 숨은 textarea를 골라 execCommand('copy'). 사용자 제스처 안에서만 동작한다. */
-function legacyCopy(value: string): boolean {
-  const ta = document.createElement('textarea')
-  ta.value = value
-  ta.setAttribute('readonly', '')
-  ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0'
-  document.body.appendChild(ta)
-  ta.select(); ta.setSelectionRange(0, value.length)
+/** 클립보드 API가 없을 때의 대체 복사(http 주소의 iOS Safari 등). 사용자 제스처 안에서만 동작한다.
+ *  iOS Safari는 숨은 textarea의 선택을 복사하지 않아(빈 문자열이 실려 감) 화면에 있는 입력 칸을 잠깐 빌린다 —
+ *  값을 프롬프트로 바꿔 전체 선택 → execCommand('copy') → 원래 값·선택으로 되돌린다. React 리렌더 전에 끝나 화면엔 안 보인다. */
+function legacyCopy(value: string, field: HTMLTextAreaElement | null): boolean {
+  const el = field ?? document.createElement('textarea')
+  const temp = !field
+  if (temp) { el.style.position = 'fixed'; el.style.top = '0'; el.style.left = '0'; el.style.opacity = '0'; document.body.appendChild(el) }
+  const prev = el.value, selStart = el.selectionStart, selEnd = el.selectionEnd
+  el.value = value
+  el.focus({ preventScroll: true })
+  el.setSelectionRange(0, value.length)
   let ok = false
   try { ok = document.execCommand('copy') } catch { ok = false }
-  ta.remove()
+  el.value = prev
+  try { el.setSelectionRange(selStart, selEnd) } catch { /* 무시 */ }
+  if (temp) el.remove()
   return ok
 }
 // 하루 한 번 적는 흐름에 맞춘 안내 — 말해야 할 항목을 한 줄씩. 굳기 기준 낱말은 BristolScale의 7칸과 같다.
@@ -42,6 +47,7 @@ const INPUT_PLACEHOLDER = [
 export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
   { open: boolean; onOpenChange: (o: boolean) => void; tz: string; foods: FoodHint[]; onParsed: (result: Extract<PasteResult, { ok: true }>, raw: RawInput) => void }) {
   const [text, setText] = useState('')
+  const textRef = useRef<HTMLTextAreaElement>(null)
   const [referenceAt, setReferenceAt] = useState<Date | null>(null)
   const [paste, setPaste] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -64,9 +70,9 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
     // await 뒤에는 사용자 제스처가 끝나 execCommand가 거부될 수 있으므로, 옛 방식은 await 없이 먼저 시도한다.
     let ok = false
     if (navigator.clipboard?.writeText) {
-      try { await navigator.clipboard.writeText(p); ok = true } catch { ok = legacyCopy(p) }
+      try { await navigator.clipboard.writeText(p); ok = true } catch { ok = legacyCopy(p, textRef.current) }
     } else {
-      ok = legacyCopy(p)
+      ok = legacyCopy(p, textRef.current)
     }
     if (ok) {
       setCopied('yes'); setJustCopied(true)
@@ -93,7 +99,7 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
         <ol className="mb-3 grid grid-cols-3 gap-1.5 text-[12px]">
           {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-ink' : i < step ? 'bg-line text-ink line-through' : 'bg-bg text-mute')}>{s}</li>)}
         </ol>
-        <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={11} autoFocus
+        <Textarea ref={textRef} value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={11} autoFocus
           placeholder={INPUT_PLACEHOLDER}
           className="rounded-xl border-line bg-bg text-[16px] md:text-[16px]" data-testid="input-text" />
         <Button onClick={copyPrompt} disabled={!text.trim()} className="mt-2 h-11 w-full rounded-xl text-[14px] font-bold" data-testid="copy-prompt">
