@@ -69,5 +69,5 @@ test('폼으로 배변 저장', async ({ page }) => {
   await page.getByRole('button', { name: '급했음' }).click()
   await page.getByTestId('form-save').click()
   await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByText('브리스톨 7 · 급함')).toBeVisible()
+  await expect(page.getByText('변 굳기 7 · 급함')).toBeVisible()
 })

@@ -9,7 +9,7 @@ describe('summarizeEntry', () => {
   })
   it('bowel', () => {
     expect(summarizeEntry({ kind: 'bowel', occurred_at: 'x', time_precision: 'exact', source_text: null,
-      data: { bristol: 7, urgency: true, nocturnal: false, blood: null, note: null } })).toBe('브리스톨 7 · 급함')
+      data: { bristol: 7, urgency: true, nocturnal: false, blood: null, note: null } })).toBe('변 굳기 7 · 급함')
   })
   it('symptom', () => {
     expect(summarizeEntry({ kind: 'symptom', occurred_at: 'x', time_precision: 'exact', source_text: null,

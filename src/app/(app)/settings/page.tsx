@@ -108,9 +108,10 @@ export default function SettingsPage() {
         <Button onClick={download} disabled={!from || !to || from > to || exporting} className="mt-3 h-10 w-full rounded-xl font-semibold">CSV 내려받기</Button>
         {exportMsg && <p role="alert" className="mt-2 text-[12px] text-warn">{exportMsg}</p>}
       </Card>
-      <details className="mx-4 mb-2 rounded-2xl border border-line bg-card p-4 text-[14px]">
+      <details className="mx-4 mb-2 min-w-0 rounded-2xl border border-line bg-card p-4 text-[14px]">
         <summary className="cursor-pointer font-semibold">프롬프트 원문</summary>
-        <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-bg p-2 text-[12px] text-mute">{template}</pre>
+        {/* 프롬프트 안 JSON 예시는 공백 없이 352자가 이어진다 — anywhere 없이는 pre가 그 폭만큼 벌어져 화면 전체가 넓어진다 */}
+        <pre className="mt-2 min-w-0 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] rounded-xl bg-bg p-2 text-[12px] text-mute">{template}</pre>
       </details>
       <div className="px-4"><Button variant="outline" onClick={signOut} className="h-10 w-full rounded-xl border-line">로그아웃</Button></div>
     </main>

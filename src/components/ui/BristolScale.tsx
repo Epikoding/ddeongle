@@ -33,7 +33,7 @@ export function BristolScale({ value, onChange }: { value: number | null; onChan
     group.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
   }
   return (
-    <div ref={group} className="grid grid-cols-7 gap-1" role="radiogroup" aria-label="브리스톨 척도">
+    <div ref={group} className="grid grid-cols-7 gap-1" role="radiogroup" aria-label="변 굳기">
       {BRISTOL.map(({ n, label }, i) => {
         const on = value === n
         const warn = n >= 6

@@ -8,7 +8,7 @@ export function summarizeEntry(e: Entry): string {
     case 'meal': return e.data.foods.map((f) => f.name).join(', ') || '(음식 없음)'
     case 'symptom': return `${e.data.type}${e.data.severity != null ? ` · 강도 ${e.data.severity}/10` : ''}`
     case 'bowel': {
-      const parts = [e.data.bristol != null ? `브리스톨 ${e.data.bristol}` : '배변']
+      const parts = [e.data.bristol != null ? `변 굳기 ${e.data.bristol}` : '배변']
       if (e.data.urgency) parts.push('급함')
       if (e.data.nocturnal) parts.push('야간')
       if (e.data.blood) parts.push('혈변')

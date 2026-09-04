@@ -59,7 +59,7 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
           {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-ink' : i < step ? 'bg-line text-ink line-through' : 'bg-bg text-mute')}>{s}</li>)}
         </ol>
         <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={3} autoFocus
-          placeholder="키보드 마이크를 누르고 말하세요. 예: 아까 12시에 김치찌개 먹었고 지금 배가 좀 아파"
+          placeholder="키보드 마이크를 누르고 말하세요. 예: 12시에 김치찌개 먹었고, 3시쯤 설사 한 번 했고, 어젯밤엔 잠을 잘 못 잤어. 지금은 배가 좀 아파"
           className="rounded-xl border-line bg-bg text-[16px] md:text-[16px]" data-testid="input-text" />
         <Button onClick={copyPrompt} disabled={!text.trim()} className="mt-2 h-11 w-full rounded-xl text-[14px] font-bold" data-testid="copy-prompt">
           {justCopied ? '복사됨 ✓ 자기 LLM에 붙여넣기' : '프롬프트 복사'}

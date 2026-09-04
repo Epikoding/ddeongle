@@ -34,7 +34,9 @@ export function DayPicker({ date, onPick }: { date: string; tz: string; onPick: 
         <button type="button" aria-label="달력" data-testid="calendar-button" className="rounded-full p-2 text-mute hover:bg-accent-soft"><CalendarDays size={22} /></button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-2 shadow-none">
+        {/* 칸을 28px→36px로 넓힌다 — 점이 날짜 숫자에 닿지 않고 터치 표적도 커진다. twMerge가 shadcn의 같은 임의 속성을 덮는다. */}
         <Calendar mode="single" locale={ko} weekStartsOn={1} month={month} onMonthChange={setMonth}
+          className="[--cell-size:--spacing(9)]"
           selected={new Date(`${date}T12:00:00`)}
           onSelect={(d) => { if (d) { onPick(ymd(d)); setOpen(false) } }}
           modifiers={{ entry: entryDays, target: targetDays }}

@@ -116,7 +116,7 @@ export function EntryEditor({ value, tz, onChange, onRemove }:
       </>)}
 
       {value.kind === 'bowel' && (<>
-        <Field label="모양 (브리스톨)" group>{({ labelId }) => (
+        <Field label="변 굳기" group>{({ labelId }) => (
           <div role="group" aria-labelledby={labelId}>
             <BristolScale value={value.data.bristol} onChange={(v) => set({ ...value.data, bristol: v })} />
           </div>
