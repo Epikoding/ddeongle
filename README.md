@@ -29,7 +29,7 @@
 1. `supabase link --project-ref ufhaasemnmaowjefcisd` → `supabase db push`
 2. 초대: `supabase db query --linked "insert into public.invites(email) values ('<이메일>') on conflict do nothing"`
 3. `vercel link` → `vercel env add NEXT_PUBLIC_SUPABASE_URL production` / `NEXT_PUBLIC_SUPABASE_ANON_KEY production` → `vercel --prod`
-4. 코드 push는 `git push origin main` (Vercel은 CLI 배포라 GitHub 연동 없음 — 배포는 3번을 다시 돌린다)
+4. Vercel이 GitHub `Epikoding/gut-log`에 연결돼 있어 `git push origin main`이면 자동으로 프로덕션 배포된다(다른 브랜치는 프리뷰). 첫 배포 때만 3번을 손으로 돌렸다.
 
 알아 둘 것:
 - 로그인 링크는 **요청한 기기·브라우저에서 열어야** 한다(PKCE). 기본 발송기라 이메일 템플릿을 token_hash 방식으로 못 바꾼다 — 커스텀 SMTP를 붙이면 바꿀 수 있다.
