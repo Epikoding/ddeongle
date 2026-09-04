@@ -10,6 +10,20 @@ import { newId } from '@/lib/queue'
 import { cn } from '@/lib/utils'
 
 const STEPS = ['1 말하기', '2 프롬프트 복사', '3 결과 붙여넣기'] as const
+// 하루 한 번 적는 흐름에 맞춘 안내 — 말해야 할 항목을 한 줄씩. 굳기 기준 낱말은 BristolScale의 7칸과 같다.
+const INPUT_PLACEHOLDER = [
+  '오늘 있었던 일을 순서대로 말해 주세요. 예:',
+  '- 식사: 8시 토스트랑 우유, 12시 김치찌개, 7시 삼겹살에 소주 한 잔',
+  '- 배변: 3시쯤 한 번, 물처럼 묽었음(굳기 7), 급했음',
+  '  (굳기 기준: 1 딱딱 · 2 울퉁 · 3 금간 · 4 매끈 · 5 무른 · 6 죽 · 7 물)',
+  '- 증상: 오후 내내 배가 더부룩, 저녁엔 복통 5 정도',
+  '- 수면: 어젯밤 6시간, 자주 깼음',
+  '- 스트레스: 마감 때문에 높음',
+  '- 운동: 저녁에 30분 걷기',
+  '- 약: 아침에 메트포르민',
+  '- 월경: 오늘 시작',
+  '- 메모: 점심 후에 커피 두 잔',
+].join('\n')
 
 export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
   { open: boolean; onOpenChange: (o: boolean) => void; tz: string; foods: FoodHint[]; onParsed: (result: Extract<PasteResult, { ok: true }>, raw: RawInput) => void }) {
@@ -58,8 +72,8 @@ export function InputSheet({ open, onOpenChange, tz, foods, onParsed }:
         <ol className="mb-3 grid grid-cols-3 gap-1.5 text-[12px]">
           {STEPS.map((s, i) => <li key={s} className={cn('rounded-xl py-1.5 text-center', i === step ? 'bg-accent-soft font-bold text-ink' : i < step ? 'bg-line text-ink line-through' : 'bg-bg text-mute')}>{s}</li>)}
         </ol>
-        <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={3} autoFocus
-          placeholder="키보드 마이크를 누르고 말하세요. 예: 12시에 김치찌개 먹었고, 3시쯤 설사 한 번 했고, 어젯밤엔 잠을 잘 못 잤어. 지금은 배가 좀 아파"
+        <Textarea value={text} onChange={(e) => { setText(e.target.value); setReferenceAt(null); setCopied('no'); setJustCopied(false); clearRevert() }} rows={11} autoFocus
+          placeholder={INPUT_PLACEHOLDER}
           className="rounded-xl border-line bg-bg text-[16px] md:text-[16px]" data-testid="input-text" />
         <Button onClick={copyPrompt} disabled={!text.trim()} className="mt-2 h-11 w-full rounded-xl text-[14px] font-bold" data-testid="copy-prompt">
           {justCopied ? '복사됨 ✓ 자기 LLM에 붙여넣기' : '프롬프트 복사'}
