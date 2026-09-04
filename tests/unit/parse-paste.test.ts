@@ -66,3 +66,12 @@ describe('parsePaste', () => {
     if (!r.ok) expect(r.error).toBe('bad_shape')
   })
 })
+
+describe('둥근 따옴표', () => {
+  it('마크다운 렌더를 거친 JSON(“ ”)도 읽는다', () => {
+    const curly = '{“entries”:[{“kind”:“note”,“occurred_at”:“2026-09-04T10:00:00+09:00”,“time_precision”:“exact”,“source_text”:null,“data”:{“text”:“기록만”}}],“questions”:[]}'
+    const r = parsePaste(curly)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.entries[0].kind).toBe('note')
+  })
+})

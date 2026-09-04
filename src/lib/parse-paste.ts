@@ -12,6 +12,11 @@ export function extractJson(text: string): string | null {
   return text.slice(start, end + 1)
 }
 
+/** 둥근 따옴표를 곧은 따옴표로. 마크다운 렌더를 거쳐 복사된 JSON을 살리는 용도다. */
+export function straightenQuotes(text: string): string {
+  return text.replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+}
+
 export function parsePaste(text: string): PasteResult {
   const json = extractJson(text)
   if (!json) return { ok: false, error: 'no_json', message: 'JSON을 찾지 못했습니다. LLM 답변 전체를 다시 복사해 주세요.' }
@@ -20,7 +25,12 @@ export function parsePaste(text: string): PasteResult {
   try {
     obj = JSON.parse(json)
   } catch {
-    return { ok: false, error: 'no_json', message: 'JSON이 중간에 끊겼습니다. LLM 답변 전체를 다시 복사해 주세요.' }
+    // 채팅 앱이 마크다운으로 렌더한 JSON을 복사하면 따옴표가 둥근 따옴표(“ ” ‘ ’)로 바뀐다 — 한 번 되돌려 다시 시도한다.
+    try {
+      obj = JSON.parse(straightenQuotes(json))
+    } catch {
+      return { ok: false, error: 'no_json', message: 'JSON이 중간에 끊겼습니다. LLM 답변 전체를 다시 복사해 주세요.' }
+    }
   }
 
   const shape = parsedResultSchema.safeParse(obj)
