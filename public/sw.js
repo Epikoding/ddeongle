@@ -1,4 +1,4 @@
-const CACHE = 'gutlog-shell-v2'
+const CACHE = 'gutlog-shell-v3'
 const SHELL = ['/', '/login', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (e) => {
