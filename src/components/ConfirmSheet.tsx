@@ -32,6 +32,17 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
   const blocked = entries.filter((e, i) => e.time_precision === 'unknown' || problems[i] !== undefined).length
   // 미래 시각 판정 기준은 렌더 시점이 아니라 프롬프트에 넣은 기준 시각이다 (명세 §4.2)
   const reference = new Date(raw.reference_at)
+  const referenceLabel = new Intl.DateTimeFormat('ko-KR', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(reference)
+  const futureIdx = entries.map((e, i) => (isFuture(e.occurred_at, reference) ? i : -1)).filter((i) => i >= 0)
+  // 기준 시각보다 뒤의 항목은 대개 "어제 일을 오늘 적은" 경우다 — 날짜만 하루 앞으로 옮기고 시각·정밀도는 그대로 둔다
+  function toYesterday(e: Entry): Entry {
+    return { ...e, occurred_at: new Date(new Date(e.occurred_at).getTime() - 86_400_000).toISOString() }
+  }
+  function shiftToYesterday(indexes: number[]) {
+    const set = new Set(indexes)
+    setEntries(entries.map((e, i) => (set.has(i) ? toYesterday(e) : e)))
+    setProblems((p) => { const next = { ...p }; for (const i of indexes) delete next[i]; return next })
+  }
 
   async function save() {
     // 붙여넣기 뒤 편집으로 모양이 깨졌을 수 있다 — 보내기 직전에 다시 검사한다
@@ -98,12 +109,23 @@ export function ConfirmSheet({ result, raw, tz, onSaved, onClose }:
               항목 {result.invalid.length}개는 모양이 틀려 뺐습니다: {result.invalid.map((i) => i.reason).join(' / ')}
             </div>
           )}
+          {futureIdx.length >= 2 && (
+            <div className="flex items-center justify-between gap-2 rounded-xl bg-warn-soft p-3 text-[12px] text-warn">
+              <span>프롬프트를 복사한 {referenceLabel}보다 뒤의 시각이 {futureIdx.length}건 있어요.</span>
+              <button type="button" onClick={() => shiftToYesterday(futureIdx)} className="shrink-0 rounded-full border border-warn/60 px-2 py-0.5 font-semibold">모두 어제로</button>
+            </div>
+          )}
           {entries.map((e, i) => (
             <div key={i}>
               <EntryCard entry={e} tz={tz} onClick={() => setEditing(editing === i ? null : i)}
                 tone={e.time_precision === 'unknown' || problems[i] !== undefined ? 'error' : e.time_precision === 'approx' || isFuture(e.occurred_at, reference) ? 'warn' : 'normal'} />
               {problems[i] !== undefined && <p role="alert" className="mt-1 text-[12px] text-warn">모양이 틀려 저장하지 않았습니다: {problems[i]}</p>}
-              {isFuture(e.occurred_at, reference) && <p className="mt-1 text-[12px] text-warn">기준 시각보다 뒤의 시각입니다.</p>}
+              {isFuture(e.occurred_at, reference) && (
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-warn">
+                  <span>프롬프트를 복사한 {referenceLabel}보다 뒤의 시각이에요. 어제 일이면 옆 버튼을, 아니면 카드를 눌러 시각을 고쳐 주세요.</span>
+                  <button type="button" onClick={() => shiftToYesterday([i])} className="rounded-full border border-warn/60 px-2 py-0.5 font-semibold text-warn">어제로 바꾸기</button>
+                </p>
+              )}
               {editing === i && (
                 <EntryEditor value={e} tz={tz}
                   onChange={(v) => {
