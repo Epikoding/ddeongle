@@ -66,7 +66,7 @@ export default function SettingsPage() {
       // 엑셀이 UTF-8로 알아보게 BOM을 앞에 붙인다.
       const blob = new Blob(['\uFEFF' + entriesToCsv(rows, tz)], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a'); a.href = url; a.download = `gut-log_${from}_${to}.csv`
+      const a = document.createElement('a'); a.href = url; a.download = `ddeongle_${from}_${to}.csv`
       document.body.appendChild(a); a.click(); a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (err) { setExportMsg('내보내지 못했습니다. ' + toMsg(err)) }

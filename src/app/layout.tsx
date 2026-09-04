@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { SwRegister } from '@/components/SwRegister'
 import './globals.css'
 
-export const metadata: Metadata = { title: '장 기록', description: '설사 유발요인을 찾는 일기' }
+export const metadata: Metadata = { title: '똥글', description: '설사 유발요인을 찾는 일기', appleWebApp: { title: '똥글', capable: true, statusBarStyle: 'default' } }
 export const viewport: Viewport = {
   width: 'device-width', initialScale: 1, viewportFit: 'cover',
   themeColor: [

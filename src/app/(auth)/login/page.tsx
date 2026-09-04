@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 pb-16">
-      <h1 className="text-[24px] font-bold tracking-[-0.01em]">장 기록</h1>
+      <h1 className="text-[24px] font-bold tracking-[-0.01em]">똥글</h1>
       <p className="mt-1 mb-8 text-[14px] text-mute">설사 유발요인을 찾는 일기</p>
       {/* 보낸 뒤에도 폼을 지우지 않는다 — 주소를 잘못 적었으면 그 자리에서 고쳐야 하고, 폼이 통째로
           사라지면 방금 누른 버튼과 함께 포커스도 사라진다. 안내 자리는 늘 두고 문구만 갈아 끼운다. */}
